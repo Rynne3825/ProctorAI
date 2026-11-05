@@ -1,6 +1,6 @@
 import uvicorn
 from src.config import get_config
-from src.web.app import app
+from src.web import app
 
 if __name__ == "__main__":
     cfg = get_config()

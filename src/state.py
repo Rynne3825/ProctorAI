@@ -3,11 +3,11 @@ from typing import Dict, List, Any
 
 
 class ProctoringState:
-    """Quản lý trạng thái đa luồng Thread-safe cho hệ thống giám sát thi với khả năng mở rộng thiết bị."""
+    """Quản lý trạng thái đa luồng Thread-safe cho hệ thống giám sát thi."""
 
     def __init__(self):
         self._lock = threading.Lock()
-        self.system_enabled: bool = True  # Master Switch: Bật/Tắt toàn bộ hệ thống
+        self.system_enabled: bool = True  # Master Switch
         self.stats: Dict[str, int] = {
             "total_violations": 0,
             "phone": 0,
@@ -37,7 +37,6 @@ class ProctoringState:
         """Ghi nhận thống kê vi phạm động và lưu vào lịch sử snapshot."""
         v_lower = violation_type.lower()
         
-        # Phân loại mở rộng linh hoạt
         if "thoại" in v_lower or "phone" in v_lower:
             category = "phone"
         elif "máy tính" in v_lower or "calculator" in v_lower:
@@ -64,7 +63,6 @@ class ProctoringState:
                 "duration": f"{duration:.2f}s",
                 "image_url": f"/screenshots/{file_name}"
             }
-            # Lưu bản ghi mới nhất lên đầu, tối đa 100 ảnh
             self.snapshots_history.insert(0, snapshot_item)
             if len(self.snapshots_history) > 100:
                 self.snapshots_history.pop()
@@ -92,5 +90,4 @@ class ProctoringState:
             }
 
 
-# Singleton toàn cục
 state_manager = ProctoringState()

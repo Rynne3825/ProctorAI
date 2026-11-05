@@ -5,18 +5,15 @@ import cv2
 import numpy as np
 
 from src.config import get_config
-from src.core.state import state_manager
-from src.core.logger import save_violation_snapshot
-from src.vision.head_pose import HeadPoseEstimator
-from src.vision.yolo_detector import YoloDetector
-from src.vision.hud_renderer import HUDRenderer
+from src.state import state_manager
+from src.logger import save_violation_snapshot
+from src.head_pose import HeadPoseEstimator
+from src.detector import YoloDetector
+from src.hud import HUDRenderer
 
 
 class CameraWorker(threading.Thread):
-    """
-    Luồng nền độc lập điều phối việc đọc Camera, điều phối nhận diện AI và tạo buffer phát sóng MJPEG.
-    Hỗ trợ Master Switch: Tự động ngắt camera phần cứng và hạ CPU về 0% khi TẮT.
-    """
+    """Luồng nền độc lập điều phối việc đọc Camera, suy luận AI và tạo buffer MJPEG."""
 
     def __init__(self):
         super().__init__(daemon=True)
@@ -25,8 +22,7 @@ class CameraWorker(threading.Thread):
         self._lock = threading.Lock()
         self.latest_jpeg: Optional[bytes] = None
 
-        # Khởi tạo các module thị giác
-        self.hud_renderer = HUDRenderer()
+        self.hud = HUDRenderer()
         self.head_pose = HeadPoseEstimator(self.cfg.camera.width, self.cfg.camera.height)
         self.yolo = YoloDetector(self.cfg.yolo.model_path)
 
@@ -41,16 +37,12 @@ class CameraWorker(threading.Thread):
         if self.cap.isOpened():
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.cfg.camera.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.cfg.camera.height)
-            print(f"✅ Camera đã mở thành công (Thiết bị {self.cfg.camera.device_id})")
-        else:
-            print(f"⚠️ Chưa thể mở webcam {self.cfg.camera.device_id}. Hệ thống sẽ thử lại...")
 
     def _release_camera(self):
         """Giải phóng camera phần cứng khi TẮT hệ thống nhằm bảo mật tối đa."""
         if self.cap is not None and self.cap.isOpened():
             self.cap.release()
             self.cap = None
-            print("🔒 Đã giải phóng Camera phần cứng (Chế độ Bảo Mật Standby)")
 
     def run(self):
         frame_count = 0
@@ -67,25 +59,22 @@ class CameraWorker(threading.Thread):
         while self.running:
             is_active = state_manager.is_active()
 
-            # ================= 1. TRẠNG THÁI HỆ THỐNG ĐANG TẮT (STANDBY) =================
+            # 1. STANDBY: Camera tắt, CPU 0%
             if not is_active:
                 self._release_camera()
-                standby_frame = self.hud_renderer.draw_standby(self.cfg.camera.width, self.cfg.camera.height)
-                _, buffer = cv2.imencode(".jpg", standby_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                standby_bytes = self.hud.get_standby_jpeg(self.cfg.camera.width, self.cfg.camera.height)
                 with self._lock:
-                    self.latest_jpeg = buffer.tobytes()
+                    self.latest_jpeg = standby_bytes
 
-                # Reset các biến đo đạc vi phạm
                 violation_start = None
                 current_violation = None
                 has_snapped_current = False
                 cached_yolo_violation = None
                 cached_yolo_bboxes = []
-
-                time.sleep(0.1)  # Giảm tải CPU về 0% khi tắt
+                time.sleep(0.1)
                 continue
 
-            # ================= 2. TRẠNG THÁI HỆ THỐNG ĐANG BẬT (ACTIVE) =================
+            # 2. ACTIVE: Camera mở và chạy AI
             if self.cap is None or not self.cap.isOpened():
                 self._init_camera()
                 time.sleep(0.05)
@@ -96,19 +85,21 @@ class CameraWorker(threading.Thread):
                 time.sleep(0.03)
                 continue
 
-            # Lật ảnh gương để trải nghiệm tự nhiên
             frame = cv2.flip(frame, 1)
             frame_count += 1
             now = time.time()
 
-            # A. Quét YOLO phát hiện thiết bị (áp dụng Frame Skip để tối ưu tài nguyên)
+            # Chuyển đổi màu RGB một lần duy nhất dùng cho cả FaceMesh và PIL HUD
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            # Quét YOLO (áp dụng Frame Skip)
             if frame_count % self.cfg.yolo.frame_skip == 0:
                 cached_yolo_violation, cached_yolo_bboxes = self.yolo.detect(frame)
 
-            # B. Quét MediaPipe Face Mesh ước lượng hướng đầu
-            pitch, yaw, pose_violation = self.head_pose.process(frame)
+            # Quét MediaPipe Face Mesh
+            pitch, yaw, pose_violation = self.head_pose.process(frame_rgb)
 
-            # C. Xác định hành vi vi phạm hiện thời (Ưu tiên thiết bị cấm > tư thế đầu)
+            # Đánh giá vi phạm
             active_violation = cached_yolo_violation or pose_violation
 
             if active_violation != current_violation:
@@ -121,35 +112,27 @@ class CameraWorker(threading.Thread):
 
             is_warning = duration > thresh
 
-            # D. Tự động chụp và lưu bằng chứng khi vượt ngưỡng
+            # Lưu bằng chứng khi vượt ngưỡng
             if is_warning and not has_snapped_current:
                 save_violation_snapshot(active_violation, duration, frame)
                 has_snapped_current = True
                 last_warning_time = now
             elif is_warning and (now - last_warning_time > rules.snap_interval_extended_seconds):
-                # Vi phạm tiếp tục kéo dài -> chụp thêm 1 ảnh sau mỗi khoảng thời gian cấu hình
                 save_violation_snapshot(active_violation, duration, frame)
                 last_warning_time = now
 
-            # E. Xác định thông điệp & màu sắc hiển thị lên HUD
+            # Thông điệp trạng thái HUD
             if is_warning:
-                status_text = f"CẢNH BÁO VI PHẠM: {active_violation} ({duration:.1f}s)"
-                status_color = (0, 0, 255)  # Đỏ rực
+                status_text, status_color = f"CẢNH BÁO VI PHẠM: {active_violation} ({duration:.1f}s)", (0, 0, 255)
             elif active_violation:
-                status_text = f"Đang chú ý: {active_violation} ({duration:.1f}s)"
-                status_color = (0, 255, 255)  # Vàng
+                status_text, status_color = f"Đang chú ý: {active_violation} ({duration:.1f}s)", (0, 255, 255)
             else:
-                status_text = "BÌNH THƯỜNG - HỢP LỆ"
-                status_color = (0, 255, 0)  # Xanh lục
+                status_text, status_color = "BÌNH THƯỜNG - HỢP LỆ", (0, 255, 0)
 
             angle_text = f"Góc nhìn: Pitch: {pitch}° | Yaw: {yaw}°"
 
-            # F. Vẽ lớp phủ HUD
-            frame_annotated = self.hud_renderer.draw_hud(
-                frame, status_text, status_color, angle_text, cached_yolo_bboxes
-            )
-
-            # G. Nén thành JPEG đưa vào buffer cho Web Streamer
+            # Vẽ HUD và nén JPEG
+            frame_annotated = self.hud.draw_hud(frame_rgb, status_text, status_color, angle_text, cached_yolo_bboxes)
             _, buffer = cv2.imencode(".jpg", frame_annotated, [cv2.IMWRITE_JPEG_QUALITY, 85])
             with self._lock:
                 self.latest_jpeg = buffer.tobytes()
@@ -157,12 +140,10 @@ class CameraWorker(threading.Thread):
             time.sleep(1.0 / self.cfg.camera.fps_limit)
 
     def get_jpeg(self) -> Optional[bytes]:
-        """Lấy frame JPEG mới nhất an toàn."""
         with self._lock:
             return self.latest_jpeg
 
     def stop(self):
-        """Dừng worker khi đóng ứng dụng."""
         self.running = False
         self._release_camera()
         self.head_pose.close()

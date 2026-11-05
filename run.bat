@@ -2,6 +2,9 @@
 title ProctorAI - Smart Exam Proctoring System
 cd /d "%~dp0"
 
+:: Ngan chan Python tao cac thu muc rac __pycache__
+set PYTHONDONTWRITEBYTECODE=1
+
 echo ============================================================
 echo   PROCTORAI - HE THONG GIAM SAT PHONG THI THONG MINH
 echo   Samsung Innovation Campus - Capstone Project

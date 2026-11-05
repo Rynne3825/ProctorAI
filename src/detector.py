@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, List, Optional, Any
+from typing import Tuple, List, Optional
 import numpy as np
 from ultralytics import YOLO
 
@@ -7,10 +7,7 @@ from src.config import get_config
 
 
 class YoloDetector:
-    """
-    Bộ nhận diện thiết bị (Điện thoại, Máy tính bỏ túi...) bằng YOLO với kiến trúc mở rộng linh hoạt.
-    Dễ dàng bổ sung thêm thiết bị mới (Smartwatch, Tai nghe, Tài liệu...) qua config.yaml.
-    """
+    """Bộ nhận diện thiết bị linh hoạt (YOLO11) với cấu hình mở rộng qua config.yaml."""
 
     def __init__(self, model_path: Optional[str] = None):
         self.cfg = get_config()
@@ -19,17 +16,10 @@ class YoloDetector:
         if not os.path.exists(self.model_path):
             raise FileNotFoundError(f"Không tìm thấy mô hình YOLO tại: {self.model_path}")
 
-        print(f"⏳ Đang nạp mô hình YOLO từ: {self.model_path}")
         self.model = YOLO(self.model_path)
-        print("✅ Nạp mô hình YOLO thành công!")
 
     def detect(self, frame: np.ndarray) -> Tuple[Optional[str], List[Tuple[List[int], str, Tuple[int, int, int]]]]:
-        """
-        Quét các vật thể trong khung hình.
-        Trả về:
-        (violation_text, bboxes)
-        Trong đó bboxes là list các tuple: ( [x1, y1, x2, y2], nhãn_hiển_thị, màu_bgr )
-        """
+        """Quét các vật thể trong khung hình và trả về (violation_text, bboxes)."""
         violation: Optional[str] = None
         bboxes: List[Tuple[List[int], str, Tuple[int, int, int]]] = []
 
@@ -46,7 +36,7 @@ class YoloDetector:
                 raw_name = self.model.names[cls_id].lower()
                 coords = list(map(int, box.xyxy[0]))
 
-                # 1. Tra cứu theo quy tắc thiết bị đã cấu hình trong config.yaml
+                # 1. Tra cứu theo quy tắc trong config.yaml
                 matched_rule = None
                 for key, rule in device_rules.items():
                     if key.lower() in raw_name:
@@ -64,7 +54,7 @@ class YoloDetector:
 
                     bboxes.append((coords, label, color))
                 else:
-                    # 2. Xử lý dự phòng (Fallback thông minh cho các thiết bị phát hiện mới)
+                    # 2. Xử lý dự phòng thông minh
                     if any(k in raw_name for k in ["phone", "cell", "mobile"]):
                         bboxes.append((coords, f"PHONE ({conf:.0%})", (0, 0, 255)))
                         if violation is None:
@@ -72,7 +62,6 @@ class YoloDetector:
                     elif any(k in raw_name for k in ["calc", "calculator"]):
                         bboxes.append((coords, f"MÁY TÍNH ({conf:.0%})", (0, 255, 0)))
                     else:
-                        # Thiết bị khác chưa định nghĩa rõ
                         bboxes.append((coords, f"{raw_name.upper()} ({conf:.0%})", (200, 200, 200)))
 
         return violation, bboxes

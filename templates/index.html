@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProctorAI - Hệ Thống Giám Sát Phòng Thi Thông Minh</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- ================= 1. HEADER ================= -->
+    <header class="app-header">
+        <div class="brand-group">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 13.9c-2.7-1-5-3.9-5-7.9h10c0 4-2.3 6.9-5 7.9z"/>
+                </svg>
+            </div>
+            <div class="brand-info">
+                <div class="brand-name">
+                    <span>PROCTOR</span>AI
+                    <span class="version-tag">v2.0</span>
+                </div>
+                <div class="brand-sub">SAMSUNG INNOVATION CAMPUS • CAPSTONE PROJECT</div>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Đồng hồ thời gian thực -->
+            <div class="realtime-clock" id="clockDisplay">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/>
+                </svg>
+                <span id="currentTime">00:00:00</span>
+            </div>
+
+            <!-- Badge trạng thái hệ thống -->
+            <div class="system-status-pill active" id="systemStatusBadge">
+                <span class="pulse-dot"></span>
+                <span class="status-label" id="systemStatusText">ĐANG GIÁM SÁT</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= 2. MAIN CONTAINER ================= -->
+    <div class="app-container">
+
+        <!-- HÀNG 5 THẺ KPI THỐNG KÊ -->
+        <section class="kpi-grid">
+            <!-- KPI 1: Tổng vi phạm -->
+            <div class="kpi-card total">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-title">TỔNG VI PHẠM</div>
+                    <div class="kpi-value" id="kpiTotal">0</div>
+                </div>
+            </div>
+
+            <!-- KPI 2: Điện thoại -->
+            <div class="kpi-card phone">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-title">ĐIỆN THOẠI</div>
+                    <div class="kpi-value" id="kpiPhone">0</div>
+                </div>
+            </div>
+
+            <!-- KPI 3: Máy tính cầm tay -->
+            <div class="kpi-card calculator">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-title">MÁY TÍNH (HỢP LỆ)</div>
+                    <div class="kpi-value" id="kpiCalc">0</div>
+                </div>
+            </div>
+
+            <!-- KPI 4: Tư thế đầu -->
+            <div class="kpi-card pose">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2a9 9 0 0 0-9 9c0 3.8 2.4 7 5.7 8.3L8 22h8l-.7-2.7C18.6 18 21 14.8 21 11a9 9 0 0 0-9-9zm0 14a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-title">QUAY ĐẦU</div>
+                    <div class="kpi-value" id="kpiPose">0</div>
+                </div>
+            </div>
+
+            <!-- KPI 5: Mất mặt / Che camera -->
+            <div class="kpi-card face">
+                <div class="kpi-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-title">MẤT MẶT / CHE CAM</div>
+                    <div class="kpi-value" id="kpiFace">0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NỘI DUNG CHÍNH: 2 CỘT -->
+        <div class="dashboard-body">
+
+            <!-- CỘT TRÁI: CAMERA VÀ ĐIỀU KHIỂN -->
+            <div class="left-panel">
+                <div class="video-card">
+                    <!-- Thanh tiêu đề phía trên camera -->
+                    <div class="video-card-header">
+                        <div class="room-tags">
+                            <span class="tag lab">LAB 1 - PHÒNG MÁY SIC</span>
+                            <span class="tag subject">Môn: Lập Trình AI</span>
+                        </div>
+                        <div class="resolution-badge">640 × 480 @ 30 FPS</div>
+                    </div>
+
+                    <!-- Khung phát Video MJPEG -->
+                    <div class="video-viewport">
+                        <img id="videoStream" src="/video_feed" alt="Đang kết nối camera...">
+                        <!-- Lớp phủ Standby khi TẮT hệ thống -->
+                        <div class="standby-screen" id="standbyScreen">
+                            <div class="standby-content">
+                                <div class="standby-icon-circle">
+                                    <svg viewBox="0 0 24 24"><path d="M18 10.48V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4.48l4 3.98v-11l-4 3.5zM16 18H4V6h12v12z"/></svg>
+                                    <div class="slash-line"></div>
+                                </div>
+                                <h3>HỆ THỐNG ĐANG TẮT</h3>
+                                <p>Webcam phần cứng đã được ngắt để bảo mật. Nhấn nút bên dưới để bắt đầu giám sát.</p>
+                                <button class="btn btn-primary" id="btnQuickStart">
+                                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    BẬT HỆ THỐNG NGAY
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thanh điều khiển bên dưới Camera -->
+                    <div class="video-controls">
+                        <!-- NÚT MASTER SWITCH DUY NHẤT -->
+                        <div class="primary-controls">
+                            <button class="btn-master active" id="btnMasterToggle">
+                                <svg class="icon-toggle" viewBox="0 0 24 24" id="iconMaster">
+                                    <path d="M6 6h12v12H6z"/>
+                                </svg>
+                                <span id="textMasterToggle">TẮT HỆ THỐNG</span>
+                            </button>
+
+                            <button class="btn-action" id="btnClearSession" title="Đặt lại dữ liệu phiên thi">
+                                <svg viewBox="0 0 24 24"><path d="M19.36 2.72l1.42 1.42c.78.78.78 2.05 0 2.83l-1.42 1.42-4.24-4.24 1.42-1.42c.78-.79 2.04-.79 2.82-.01zM3 21h4.24l10.6-10.61-4.24-4.24L3 16.76V21z"/></svg>
+                                <span>Đặt Lại</span>
+                            </button>
+                        </div>
+
+                        <div class="stream-info">
+                            <span class="info-dot"></span>
+                            <span id="aiEngineStatus">AI ENGINE: SẴN SÀNG</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CỘT PHẢI: BẰNG CHỨNG VI PHẠM (SNAPSHOTS) -->
+            <div class="right-panel">
+                <div class="gallery-card">
+                    <!-- Gallery Header -->
+                    <div class="gallery-header">
+                        <div class="gallery-title">
+                            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                            <h2>BẰNG CHỨNG VI PHẠM</h2>
+                        </div>
+                        <span class="gallery-count-badge" id="evidenceCount">0 ảnh</span>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="gallery-tabs">
+                        <button class="tab-btn active" data-filter="all">Tất cả</button>
+                        <button class="tab-btn" data-filter="phone">Điện thoại</button>
+                        <button class="tab-btn" data-filter="pose">Quay đầu</button>
+                        <button class="tab-btn" data-filter="face">Che mặt</button>
+                    </div>
+
+                    <!-- Danh sách hình ảnh -->
+                    <div class="gallery-grid" id="snapshotsList">
+                        <!-- Render qua JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= 3. MODAL PHÓNG TO HÌNH ẢNH ================= -->
+    <div class="modal-backdrop" id="imageModal">
+        <div class="modal-dialog">
+            <button class="modal-close-btn" id="btnModalClose">&times;</button>
+            <div class="modal-image-wrap">
+                <img id="modalImg" src="" alt="Ảnh bằng chứng vi phạm">
+            </div>
+            <div class="modal-caption">
+                <div class="modal-violation-title" id="modalTitle">Loại vi phạm</div>
+                <div class="modal-meta-row">
+                    <span class="modal-tag" id="modalTag">Category</span>
+                    <span class="modal-time" id="modalTime">Thời gian</span>
+                    <span class="modal-duration" id="modalDuration">Thời lượng</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

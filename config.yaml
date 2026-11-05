@@ -1,0 +1,57 @@
+app:
+  title: "ProctorAI - Hệ Thống Giám Sát Phòng Thi Thông Minh"
+  host: "127.0.0.1"
+  port: 8000
+
+camera:
+  device_id: 0
+  width: 640
+  height: 480
+  fps_limit: 30
+
+rules:
+  violation_threshold_seconds: 2.0
+  no_face_threshold_seconds: 3.0
+  snap_interval_extended_seconds: 10.0
+
+head_pose:
+  yaw_backward_threshold: 25.0
+  yaw_side_threshold: 10.0
+  pitch_threshold: 10.0
+
+yolo:
+  model_path: "models/best.pt"
+  confidence_threshold: 0.7
+  frame_skip: 5
+  # Danh mục quy tắc nhận diện thiết bị linh hoạt (Dễ dàng mở rộng thêm tai nghe, smartwatch, tài liệu...)
+  device_rules:
+    phone:
+      label: "ĐIỆN THOẠI"
+      is_violation: true
+      warning_text: "Sử dụng ĐIỆN THOẠI"
+      color: [0, 0, 255] # Đỏ
+    calculator:
+      label: "MÁY TÍNH CẦM TAY"
+      is_violation: false
+      warning_text: "MÁY TÍNH (HỢP LỆ)"
+      color: [0, 255, 0] # Xanh lá
+    smartwatch:
+      label: "ĐỒNG HỒ THÔNG MINH"
+      is_violation: true
+      warning_text: "Sử dụng ĐỒNG HỒ THÔNG MINH"
+      color: [0, 0, 255]
+    earphone:
+      label: "TAI NGHE"
+      is_violation: true
+      warning_text: "Đeo TAI NGHE / AIRPODS"
+      color: [0, 0, 255]
+    book:
+      label: "TÀI LIỆU"
+      is_violation: true
+      warning_text: "Sử dụng TÀI LIỆU / GIẤY THI"
+      color: [0, 0, 255]
+
+paths:
+  screenshots_dir: "screenshots"
+  logs_dir: "logs"
+  font_path: "C:/Windows/Fonts/arialbd.ttf"

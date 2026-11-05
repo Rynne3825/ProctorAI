@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +9,890 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+/* ============================================================
+   PROCTORAI - MODERN DARK DASHBOARD STYLESHEET
+   ============================================================ */
+
+:root {
+    --bg-dark: #070b14;
+    --bg-surface: #0e1526;
+    --bg-surface-elevated: #141f36;
+    --border-subtle: #1e293b;
+    --border-focus: #334155;
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    --color-primary: #3b82f6;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-purple: #8b5cf6;
+    --color-pink: #ec4899;
+
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* ================= 1. HEADER ================= */
+.app-header {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+}
+
+.brand-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-logo {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+}
+
+.brand-logo svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
+
+.brand-name {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.brand-name span {
+    color: #38bdf8;
+}
+
+.version-tag {
+    font-size: 10px;
+    font-weight: 700;
+    background: #1e293b;
+    color: #38bdf8;
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    border: 1px solid #334155;
+}
+
+.brand-sub {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.realtime-clock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.realtime-clock svg {
+    fill: #38bdf8;
+}
+
+.system-status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s ease;
+}
+
+.system-status-pill.active {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #34d399;
+}
+
+.system-status-pill.standby {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+    animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* ================= 2. APP CONTAINER & KPIS ================= */
+.app-container {
+    max-width: 1480px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+}
+
+.kpi-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-focus);
+}
+
+.kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kpi-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.kpi-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.kpi-value {
+    font-size: 26px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    line-height: 1;
+}
+
+/* Biến thể màu cho từng KPI Card */
+.kpi-card.total .kpi-icon { background: rgba(139, 92, 246, 0.15); fill: #a78bfa; }
+.kpi-card.total .kpi-value { color: #c4b5fd; }
+.kpi-card.total::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #8b5cf6; }
+
+.kpi-card.phone .kpi-icon { background: rgba(239, 68, 68, 0.15); fill: #f87171; }
+.kpi-card.phone .kpi-value { color: #fca5a5; }
+.kpi-card.phone::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #ef4444; }
+
+.kpi-card.calculator .kpi-icon { background: rgba(16, 185, 129, 0.15); fill: #34d399; }
+.kpi-card.calculator .kpi-value { color: #6ee7b7; }
+.kpi-card.calculator::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #10b981; }
+
+.kpi-card.pose .kpi-icon { background: rgba(245, 158, 11, 0.15); fill: #fbbf24; }
+.kpi-card.pose .kpi-value { color: #fde68a; }
+.kpi-card.pose::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #f59e0b; }
+
+.kpi-card.face .kpi-icon { background: rgba(236, 72, 153, 0.15); fill: #f472b6; }
+.kpi-card.face .kpi-value { color: #fbcfe8; }
+.kpi-card.face::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #ec4899; }
+
+/* ================= 3. DASHBOARD MAIN BODY (2 COLS) ================= */
+.dashboard-body {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+    align-items: start;
+}
+
+/* CỘT TRÁI: VIDEO & CONTROLS */
+.video-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+}
+
+.video-card-header {
+    background: #0b1220;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.room-tags {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.3px;
+}
+
+.tag.lab {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tag.subject {
+    background: var(--bg-surface-elevated);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+}
+
+.resolution-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.video-viewport {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.video-viewport img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* MÀN HÌNH CHỜ STANDBY */
+.standby-screen {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, #111b30 0%, #080c16 100%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.standby-screen.active {
+    display: flex;
+}
+
+.standby-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 400px;
+    gap: 14px;
+    padding: 20px;
+}
+
+.standby-icon-circle {
+    width: 80px;
+    height: 80px;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.standby-icon-circle svg {
+    width: 36px;
+    height: 36px;
+    fill: #64748b;
+}
+
+.slash-line {
+    position: absolute;
+    width: 48px;
+    height: 3px;
+    background: #ef4444;
+    transform: rotate(-45deg);
+    border-radius: 2px;
+}
+
+.standby-content h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.standby-content p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* THANH ĐIỀU KHIỂN BÊN DƯỚI */
+.video-controls {
+    padding: 14px 20px;
+    background: #0b1220;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.primary-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* NÚT MASTER SWITCH ĐẲNG CẤP */
+.btn-master {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.btn-master.active {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-master.active:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.4);
+}
+
+.btn-master.standby {
+    background: #10b981;
+    color: white;
+}
+
+.btn-master.standby:hover {
+    background: #059669;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.4);
+}
+
+.icon-toggle {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    padding: 9px 18px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    background: #1e293b;
+    color: var(--text-primary);
+    border-color: var(--border-focus);
+}
+
+.btn-action svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-primary svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.stream-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.info-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3b82f6;
+}
+
+/* ================= 4. CỘT PHẢI: SNAPSHOT GALLERY ================= */
+.gallery-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    overflow: hidden;
+}
+
+.gallery-header {
+    background: #0b1220;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gallery-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gallery-title svg {
+    width: 20px;
+    height: 20px;
+    fill: #38bdf8;
+}
+
+.gallery-title h2 {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+}
+
+.gallery-count-badge {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 700;
+    color: #38bdf8;
+    font-family: var(--font-mono);
+}
+
+.gallery-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px;
+    background: #0e1629;
+    border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+}
+
+.tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    background: #1e293b;
+    border-color: #334155;
+    color: #38bdf8;
+}
+
+.gallery-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-content: start;
+}
+
+.gallery-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.gallery-grid::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+}
+
+/* THẺ SNAPSHOT */
+.snap-card {
+    background: #080d1a;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.snap-card:hover {
+    transform: translateY(-2px);
+    border-color: #38bdf8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.snap-thumb-wrap {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+}
+
+.snap-thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.snap-card:hover .snap-thumb-wrap img {
+    transform: scale(1.05);
+}
+
+.snap-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: white;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.snap-badge.phone { background: rgba(239, 68, 68, 0.9); }
+.snap-badge.pose { background: rgba(245, 158, 11, 0.9); }
+.snap-badge.face { background: rgba(236, 72, 153, 0.9); }
+.snap-badge.other { background: rgba(139, 92, 246, 0.9); }
+
+.snap-info {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.snap-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.snap-meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.snap-duration {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 700;
+}
+
+/* Empty State */
+.empty-gallery {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 280px;
+    gap: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.empty-gallery svg {
+    width: 44px;
+    height: 44px;
+    fill: #1e293b;
+}
+
+.empty-gallery p {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ================= 5. MODAL ================= */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-backdrop.open {
+    display: flex;
+}
+
+.modal-dialog {
+    background: var(--bg-surface);
+    border: 1px solid #334155;
+    border-radius: var(--radius-lg);
+    max-width: 820px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+    position: relative;
+    animation: modalIn 0.2s ease-out;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.modal-close-btn:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+}
+
+.modal-image-wrap {
+    width: 100%;
+    max-height: 540px;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-image-wrap img {
+    max-width: 100%;
+    max-height: 540px;
+    object-fit: contain;
+    display: block;
+}
+
+.modal-caption {
+    padding: 16px 20px;
+    background: #0b1220;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-violation-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.modal-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+}
+
+.modal-tag {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.modal-duration {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* ================= 6. RESPONSIVE ================= */
+@media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .dashboard-body { grid-template-columns: 1fr; }
+    .gallery-card { height: 420px; }
+}
+
+@media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .app-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .header-right { width: 100%; justify-content: space-between; }
+}
+
+    </style>
 </head>
 <body>
 
@@ -217,6 +1100,251 @@
     </div>
 
     <!-- Custom JS -->
-    <script src="/static/js/app.js"></script>
+    <script>
+/**
+ * PROCTORAI - FRONTEND INTERACTION CONTROLLER
+ * Quản lý thời gian thực, Master Toggle Switch, Polling KPI & Gallery Bằng Chứng
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ==================== 1. KHỞI TẠO BIẾN & DOM REFS ====================
+    let isSystemEnabled = true;
+    let currentFilter = 'all';
+    let allSnapshots = [];
+
+    // Header & Clock
+    const currentTimeEl = document.getElementById('currentTime');
+    const systemStatusBadge = document.getElementById('systemStatusBadge');
+    const systemStatusText = document.getElementById('systemStatusText');
+
+    // KPI Elements
+    const kpiTotalEl = document.getElementById('kpiTotal');
+    const kpiPhoneEl = document.getElementById('kpiPhone');
+    const kpiCalcEl = document.getElementById('kpiCalc');
+    const kpiPoseEl = document.getElementById('kpiPose');
+    const kpiFaceEl = document.getElementById('kpiFace');
+
+    // Camera & Controls
+    const btnMasterToggle = document.getElementById('btnMasterToggle');
+    const textMasterToggle = document.getElementById('textMasterToggle');
+    const iconMaster = document.getElementById('iconMaster');
+    const standbyScreen = document.getElementById('standbyScreen');
+    const btnQuickStart = document.getElementById('btnQuickStart');
+    const btnClearSession = document.getElementById('btnClearSession');
+    const aiEngineStatus = document.getElementById('aiEngineStatus');
+
+    // Gallery & Tabs
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const snapshotsList = document.getElementById('snapshotsList');
+    const evidenceCount = document.getElementById('evidenceCount');
+
+    // Modal
+    const imageModal = document.getElementById('imageModal');
+    const btnModalClose = document.getElementById('btnModalClose');
+    const modalImg = document.getElementById('modalImg');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalTag = document.getElementById('modalTag');
+    const modalTime = document.getElementById('modalTime');
+    const modalDuration = document.getElementById('modalDuration');
+
+    // ==================== 2. ĐỒNG HỒ THỜI GIAN THỰC ====================
+    function updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        if (currentTimeEl) {
+            currentTimeEl.textContent = `${h}:${m}:${s}`;
+        }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ==================== 3. XỬ LÝ MASTER POWER SWITCH ====================
+    function renderMasterState(enabled) {
+        isSystemEnabled = enabled;
+
+        if (enabled) {
+            // Trạng thái BẬT (Active)
+            btnMasterToggle.className = 'btn-master active';
+            textMasterToggle.textContent = 'TẮT HỆ THỐNG';
+            iconMaster.innerHTML = '<path d="M6 6h12v12H6z"/>'; // Icon Stop vuông
+
+            systemStatusBadge.className = 'system-status-pill active';
+            systemStatusText.textContent = 'ĐANG GIÁM SÁT';
+
+            standbyScreen.classList.remove('active');
+            aiEngineStatus.textContent = 'AI ENGINE: ĐANG GIÁM SÁT';
+            aiEngineStatus.style.color = '#34d399';
+        } else {
+            // Trạng thái TẮT (Standby)
+            btnMasterToggle.className = 'btn-master standby';
+            textMasterToggle.textContent = 'BẬT HỆ THỐNG';
+            iconMaster.innerHTML = '<path d="M8 5v14l11-7z"/>'; // Icon Play tam giác
+
+            systemStatusBadge.className = 'system-status-pill standby';
+            systemStatusText.textContent = 'CHẾ ĐỘ CHỜ';
+
+            standbyScreen.classList.add('active');
+            aiEngineStatus.textContent = 'AI ENGINE: TẠM DỪNG';
+            aiEngineStatus.style.color = '#fbbf24';
+        }
+    }
+
+    async function handleToggleSystem() {
+        try {
+            const res = await fetch('/api/toggle_system', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                renderMasterState(data.system_enabled);
+            }
+        } catch (err) {
+            console.error('Lỗi khi chuyển đổi Master Switch:', err);
+        }
+    }
+
+    btnMasterToggle.addEventListener('click', handleToggleSystem);
+    btnQuickStart.addEventListener('click', handleToggleSystem);
+
+    // ==================== 4. XỬ LÝ ĐẶT LẠI PHIÊN THI (CLEAR) ====================
+    btnClearSession.addEventListener('click', async () => {
+        const ok = confirm('Bạn có chắc chắn muốn đặt lại số liệu và xóa toàn bộ bằng chứng phiên thi này?');
+        if (!ok) return;
+
+        try {
+            const res = await fetch('/api/clear', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                pollStatus(); // Cập nhật lại ngay lập tức
+            }
+        } catch (err) {
+            console.error('Lỗi khi đặt lại phiên thi:', err);
+        }
+    });
+
+    // ==================== 5. BỘ LỌC TABS BẰNG CHỨNG ====================
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            renderSnapshots();
+        });
+    });
+
+    // ==================== 6. RENDER DANH SÁCH BẰNG CHỨNG ====================
+    function renderSnapshots() {
+        if (!snapshotsList) return;
+
+        let filtered = allSnapshots;
+        if (currentFilter !== 'all') {
+            filtered = allSnapshots.filter(s => s.category === currentFilter);
+        }
+
+        evidenceCount.textContent = `${allSnapshots.length} ảnh`;
+
+        if (filtered.length === 0) {
+            snapshotsList.innerHTML = `
+                <div class="empty-gallery">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <p>${allSnapshots.length === 0 ? 'Chưa ghi nhận vi phạm nào' : 'Không có ảnh trong danh mục này'}</p>
+                </div>
+            `;
+            return;
+        }
+
+        snapshotsList.innerHTML = filtered.map(snap => `
+            <div class="snap-card" onclick="openModal('${snap.image_url}', '${snap.type}', '${snap.category}', '${snap.timestamp}', '${snap.duration}')">
+                <div class="snap-thumb-wrap">
+                    <img src="${snap.image_url}" alt="${snap.type}" loading="lazy">
+                    <span class="snap-badge ${snap.category}">${snap.category.toUpperCase()}</span>
+                </div>
+                <div class="snap-info">
+                    <div class="snap-title" title="${snap.type}">${snap.type}</div>
+                    <div class="snap-meta">
+                        <span>${formatTimestamp(snap.timestamp)}</span>
+                        <span class="snap-duration">${snap.duration}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '';
+        // Định dạng lại YYYYMMDD_HHMMSS
+        const parts = ts.split('_');
+        if (parts.length >= 2) {
+            const time = parts[1];
+            if (time.length >= 6) {
+                return `${time.substr(0,2)}:${time.substr(2,2)}:${time.substr(4,2)}`;
+            }
+        }
+        return ts;
+    }
+
+    // ==================== 7. MODAL PHÓNG TO HÌNH ẢNH ====================
+    window.openModal = function(url, title, cat, time, duration) {
+        modalImg.src = url;
+        modalTitle.textContent = title;
+        modalTag.textContent = cat;
+        modalTag.className = `modal-tag ${cat}`;
+        modalTime.textContent = `Thời gian: ${formatTimestamp(time)}`;
+        modalDuration.textContent = `Kéo dài: ${duration}`;
+        imageModal.classList.add('open');
+    };
+
+    function closeModal() {
+        imageModal.classList.remove('open');
+    }
+
+    btnModalClose.addEventListener('click', closeModal);
+    imageModal.addEventListener('click', (e) => {
+        if (e.target === imageModal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && imageModal.classList.contains('open')) {
+            closeModal();
+        }
+    });
+
+    // ==================== 8. POLLING ĐỒNG BỘ TRẠNG THÁI (1s) ====================
+    async function pollStatus() {
+        try {
+            const res = await fetch('/api/status');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // Đồng bộ Master Switch nếu có sự thay đổi
+            if (data.system_enabled !== isSystemEnabled) {
+                renderMasterState(data.system_enabled);
+            }
+
+            // Cập nhật 5 thẻ KPI
+            if (data.stats) {
+                kpiTotalEl.textContent = data.stats.total_violations || 0;
+                kpiPhoneEl.textContent = data.stats.phone || 0;
+                kpiCalcEl.textContent = data.stats.calculator || 0;
+                kpiPoseEl.textContent = data.stats.head_pose || 0;
+                kpiFaceEl.textContent = data.stats.no_face || 0;
+            }
+
+            // Cập nhật danh sách bằng chứng nếu số lượng thay đổi
+            const newSnapshots = data.snapshots || [];
+            if (JSON.stringify(newSnapshots) !== JSON.stringify(allSnapshots)) {
+                allSnapshots = newSnapshots;
+                renderSnapshots();
+            }
+        } catch (err) {
+            console.warn('Đang chờ kết nối API ProctorAI...', err);
+        }
+    }
+
+    // Polling định kỳ mỗi 1 giây
+    setInterval(pollStatus, 1000);
+    pollStatus();
+});
+
+    </script>
 </body>
 </html>

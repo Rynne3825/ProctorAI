@@ -12,10 +12,7 @@ cfg = get_config()
 
 app = FastAPI(title=cfg.app.title, version="2.0.0")
 
-STATIC_DIR = os.path.join(BASE_DIR, "static")
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
-
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/screenshots", StaticFiles(directory=cfg.paths.screenshots_dir), name="screenshots")
 
 camera_worker = CameraWorker()

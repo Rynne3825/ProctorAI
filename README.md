@@ -1,8 +1,9 @@
 # 🛡️ ProctorAI - Hệ Thống Giám Sát Phòng Thi Thông Minh
 
 > **Dự Án Capstone:** Samsung Innovation Campus (SIC)  
-> **Kiến Trúc:** Clean Modular Architecture (FastAPI + YOLO11 + MediaPipe Face Mesh)  
-> **Phiên Bản:** 2.0.0
+> **Kiến Trúc:** Clean Flat Modular Architecture (FastAPI + YOLO11 + MediaPipe Face Mesh)  
+> **Phiên Bản:** 2.0.0  
+> **GitHub Repository:** [https://github.com/Rynne3825/ProctorAI](https://github.com/Rynne3825/ProctorAI)
 
 ---
 
@@ -19,49 +20,43 @@
 
 ---
 
-## 📂 2. Cấu Trúc Thư Mục Module Hóa
+## 📂 2. Cấu Trúc Thư Mục Tinh Gọn (Flat Modules)
+
+Không chia quá nhiều thư mục lồng nhau, toàn bộ mã nguồn của hệ thống nằm phẳng gọn gàng bên trong thư mục `src/` với đúng 8 file chuyên trách:
 
 ```
 ProctorAI/
-├── .venv/                         # Môi trường ảo Python 3.10 có sẵn
-├── config.yaml                    # File cấu hình tập trung (ngưỡng vi phạm, camera, AI)
-├── main.py                        # Điểm khởi chạy máy chủ chính
-├── run.bat                        # Script 1-click kích hoạt venv & mở trình duyệt
-├── requirements.txt               # Danh mục thư viện phụ thuộc
-├── README.md                      # Tài liệu hướng dẫn
-├── .gitignore                     # Cấu hình bỏ qua file tạm, cache, logs
+├── .vscode/
+│   └── settings.json          # Tự động ẩn cache và file rác trên VS Code
+├── config.yaml                # Cấu hình tập trung (ngưỡng vi phạm, camera, device_rules)
+├── main.py                    # Điểm khởi chạy máy chủ chính
+├── run.bat                    # Script 1-click (đã bật PYTHONDONTWRITEBYTECODE=1)
+├── requirements.txt           # Danh mục thư viện phụ thuộc
+├── README.md                  # Tài liệu hướng dẫn sử dụng
+├── .gitignore                 # Bỏ qua file tạm, cache, logs
 │
 ├── models/
-│   └── best.pt                    # Trọng số YOLO11 suy luận chính thức (5.48 MB)
+│   └── best.pt                # 1 mô hình suy luận duy nhất (5.48 MB)
 │
-├── logs/                          # Thư mục lưu nhật ký vi phạm (CSV utf-8-sig)
-├── screenshots/                   # Thư mục lưu ảnh chụp bằng chứng vi phạm
+├── logs/                      # Nhật ký vi phạm CSV (utf-8-sig)
+├── screenshots/               # Ảnh chụp bằng chứng vi phạm
 │
 ├── static/
-│   ├── css/
-│   │   └── style.css              # Giao diện Dark Modern Dashboard
-│   └── js/
-│       └── app.js                 # Xử lý logic Master Switch, Polling KPI & Gallery
+│   ├── css/style.css          # Giao diện Dark Modern Dashboard
+│   └── js/app.js              # Logic Master Switch, Polling KPI & Gallery
 │
 ├── templates/
-│   └── index.html                 # Khung HTML ngữ nghĩa chuẩn SEO & responsive
+│   └── index.html             # Khung HTML ngữ nghĩa gọn gàng
 │
-└── src/
-    ├── __init__.py
-    ├── config.py                  # Dataclass load cấu hình từ YAML
-    ├── core/
-    │   ├── __init__.py
-    │   ├── state.py               # Quản lý trạng thái đa luồng & Master Switch
-    │   └── logger.py              # Xử lý ghi CSV & lưu ảnh snapshot
-    ├── vision/
-    │   ├── __init__.py
-    │   ├── head_pose.py           # Ước lượng hướng đầu (MediaPipe + solvePnP)
-    │   ├── yolo_detector.py       # Bộ nhận diện thiết bị YOLO linh hoạt
-    │   ├── hud_renderer.py        # Vẽ giao diện tiếng Việt & bounding box lên video
-    │   └── camera_worker.py       # Luồng Camera nền & pipeline suy luận
-    └── web/
-        ├── __init__.py
-        └── app.py                 # FastAPI backend server & streaming routes
+└── src/                       # 8 file duy nhất, KHÔNG CÓ __init__.py, KHÔNG CÓ __pycache__
+    ├── camera.py              # Luồng Camera nền & pipeline AI
+    ├── config.py              # Đọc config.yaml thành Dataclass
+    ├── detector.py            # Nhận diện YOLO (Điện thoại, máy tính, thiết bị khác)
+    ├── head_pose.py           # Ước lượng tư thế đầu (MediaPipe + solvePnP)
+    ├── hud.py                 # Vẽ HUD tiếng Việt & cache màn hình Standby
+    ├── logger.py              # Ghi nhật ký CSV (utf-8-sig) & lưu snapshot
+    ├── state.py               # Quản lý trạng thái đa luồng & Master Switch
+    └── web.py                 # FastAPI backend server & streaming routes
 ```
 
 ---
@@ -70,6 +65,7 @@ ProctorAI/
 
 ### Cách 1: Chạy 1-Click (Khuyến nghị trên Windows)
 Nhấp đúp chuột vào file **`run.bat`**:
+* Tự động kích hoạt biến môi trường chặn sinh file rác bytecode `__pycache__`.
 * Hệ thống sẽ tự động kích hoạt môi trường ảo `.venv`.
 * Tự động bật trình duyệt web tại địa chỉ: `http://127.0.0.1:8000`.
 * Khởi động máy chủ Uvicorn tốc độ cao.
@@ -87,7 +83,7 @@ python main.py
 
 ## ⚙️ 4. Tùy Biến Cấu Hình (`config.yaml`)
 
-Bạn có thể thay đổi các tham số hoạt động mà **không cần chỉnh sửa mã nguồn Python**:
+Bạn có thể thay đổi các tham số hoạt động hoặc thêm thiết bị mới mà **không cần chỉnh sửa mã nguồn Python**:
 
 ```yaml
 camera:
@@ -109,6 +105,17 @@ yolo:
   model_path: "models/best.pt"     # Đường dẫn mô hình YOLO
   confidence_threshold: 0.7        # Ngưỡng tin cậy tối thiểu
   frame_skip: 5                    # Quét YOLO mỗi 5 frame để giảm tải CPU
+  device_rules:
+    phone:
+      label: "ĐIỆN THOẠI"
+      is_violation: true
+      warning_text: "Sử dụng ĐIỆN THOẠI"
+      color: [0, 0, 255]
+    calculator:
+      label: "MÁY TÍNH CẦM TAY"
+      is_violation: false
+      warning_text: "MÁY TÍNH (HỢP LỆ)"
+      color: [0, 255, 0]
 ```
 
 ---

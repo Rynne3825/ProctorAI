@@ -96,11 +96,17 @@ class CameraWorker(threading.Thread):
             if frame_count % self.cfg.yolo.frame_skip == 0:
                 cached_yolo_violation, cached_yolo_bboxes = self.yolo.detect(frame)
 
-            # Quét MediaPipe Face Mesh
+            # Quét MediaPipe Face Mesh (Đếm số người & hướng đầu)
             pitch, yaw, pose_violation = self.head_pose.process(frame_rgb)
 
-            # Đánh giá vi phạm
-            active_violation = cached_yolo_violation or pose_violation
+            # Đánh giá vi phạm (Ưu tiên: Có người thứ 2 > Dùng thiết bị cấm > Tư thế đầu)
+            active_violation = None
+            if pose_violation and "người" in pose_violation.lower():
+                active_violation = pose_violation
+            elif cached_yolo_violation:
+                active_violation = cached_yolo_violation
+            else:
+                active_violation = pose_violation
 
             if active_violation != current_violation:
                 violation_start = now if active_violation else None
@@ -108,11 +114,17 @@ class CameraWorker(threading.Thread):
                 has_snapped_current = False
 
             duration = (now - violation_start) if violation_start else 0.0
-            thresh = rules.no_face_threshold_seconds if active_violation == "Mất mặt / Che camera" else rules.violation_threshold_seconds
 
-            is_warning = duration > thresh
+            # Xử lý theo yêu cầu: Nếu phát hiện có người thứ hai -> CHỤP HÌNH NGAY LẬP TỨC (không cần bấm giờ)
+            is_multiple_people = bool(active_violation and ("người" in active_violation.lower()))
 
-            # Lưu bằng chứng khi vượt ngưỡng
+            if is_multiple_people:
+                is_warning = True
+            else:
+                thresh = rules.no_face_threshold_seconds if active_violation == "Mất mặt / Che camera" else rules.violation_threshold_seconds
+                is_warning = duration > thresh
+
+            # Lưu bằng chứng ngay lập tức
             if is_warning and not has_snapped_current:
                 save_violation_snapshot(active_violation, duration, frame)
                 has_snapped_current = True
@@ -123,7 +135,8 @@ class CameraWorker(threading.Thread):
 
             # Thông điệp trạng thái HUD
             if is_warning:
-                status_text, status_color = f"CẢNH BÁO VI PHẠM: {active_violation} ({duration:.1f}s)", (0, 0, 255)
+                dur_text = f" ({duration:.1f}s)" if not is_multiple_people else " (CHỤP NGAY)"
+                status_text, status_color = f"CẢNH BÁO VI PHẠM: {active_violation}{dur_text}", (0, 0, 255)
             elif active_violation:
                 status_text, status_color = f"Đang chú ý: {active_violation} ({duration:.1f}s)", (0, 255, 255)
             else:

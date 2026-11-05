@@ -14,6 +14,7 @@ class ProctoringState:
             "calculator": 0,
             "head_pose": 0,
             "no_face": 0,
+            "multiple_faces": 0,
             "other_devices": 0
         }
         self.snapshots_history: List[Dict[str, Any]] = []
@@ -37,7 +38,9 @@ class ProctoringState:
         """Ghi nhận thống kê vi phạm động và lưu vào lịch sử snapshot."""
         v_lower = violation_type.lower()
         
-        if "thoại" in v_lower or "phone" in v_lower:
+        if "người" in v_lower:
+            category = "multiple_faces"
+        elif "thoại" in v_lower or "phone" in v_lower:
             category = "phone"
         elif "máy tính" in v_lower or "calculator" in v_lower:
             category = "calculator"
@@ -60,7 +63,7 @@ class ProctoringState:
                 "timestamp": file_name.replace("violation_", "").replace(".jpg", ""),
                 "type": violation_type,
                 "category": category,
-                "duration": f"{duration:.2f}s",
+                "duration": "TỨC THỜI" if duration == 0.0 else f"{duration:.2f}s",
                 "image_url": f"/screenshots/{file_name}"
             }
             self.snapshots_history.insert(0, snapshot_item)
@@ -86,6 +89,7 @@ class ProctoringState:
                 "calculator": 0,
                 "head_pose": 0,
                 "no_face": 0,
+                "multiple_faces": 0,
                 "other_devices": 0
             }
 

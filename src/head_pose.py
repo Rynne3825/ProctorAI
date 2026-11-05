@@ -7,7 +7,10 @@ from src.config import get_config
 
 
 class HeadPoseEstimator:
-    """Ước lượng tư thế và hướng quay đầu bằng MediaPipe Face Mesh & OpenCV solvePnP."""
+    """
+    Ước lượng tư thế đầu (MediaPipe Face Mesh + solvePnP) 
+    và đếm số lượng khuôn mặt (Phát hiện người thứ hai trong phòng thi).
+    """
 
     # 6 điểm mốc chuẩn trên khuôn mặt
     FACE_KEYPOINTS = [1, 199, 33, 263, 61, 291]
@@ -36,20 +39,31 @@ class HeadPoseEstimator:
             dtype=np.float64
         )
 
+        # max_num_faces=4 để đếm chính xác số người trong khung hình
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(
-            max_num_faces=1,
+            max_num_faces=4,
             refine_landmarks=False,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
 
     def process(self, frame_rgb: np.ndarray) -> Tuple[int, int, Optional[str]]:
-        """Phân tích ảnh RGB và trả về (pitch, yaw, violation_type)."""
+        """
+        Phân tích ảnh RGB và trả về:
+        (pitch, yaw, violation_type)
+        """
         results = self.face_mesh.process(frame_rgb)
 
         if not results.multi_face_landmarks:
             return 0, 0, "Mất mặt / Che camera"
 
+        num_faces = len(results.multi_face_landmarks)
+
+        # CẢNH BÁO ĐẶC BIỆT: Phát hiện có người thứ 2 trở lên trong khung hình
+        if num_faces > 1:
+            return 0, 0, f"Phát hiện {num_faces} người (Có người thứ hai)"
+
+        # Khi chỉ có đúng 1 thí sinh: Tính toán góc quay đầu solvePnP
         landmarks = results.multi_face_landmarks[0].landmark
 
         pts_2d = np.array([

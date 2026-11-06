@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -704,9 +704,9 @@ body {
 
 .snap-badge.multiple_faces { background: rgba(220, 38, 38, 0.95); }
 .snap-badge.phone { background: rgba(239, 68, 68, 0.9); }
-.snap-badge.pose { background: rgba(245, 158, 11, 0.9); }
-.snap-badge.face { background: rgba(236, 72, 153, 0.9); }
-.snap-badge.other { background: rgba(139, 92, 246, 0.9); }
+.snap-badge.pose, .snap-badge.head_pose { background: rgba(245, 158, 11, 0.9); }
+.snap-badge.face, .snap-badge.no_face { background: rgba(236, 72, 153, 0.9); }
+.snap-badge.other, .snap-badge.other_devices { background: rgba(139, 92, 246, 0.9); }
 
 .snap-info {
     padding: 8px 10px;
@@ -1069,8 +1069,8 @@ body {
                         <button class="tab-btn active" data-filter="all">Tất cả</button>
                         <button class="tab-btn" data-filter="multiple_faces">👥 Người thứ 2</button>
                         <button class="tab-btn" data-filter="phone">Điện thoại</button>
-                        <button class="tab-btn" data-filter="pose">Quay đầu</button>
-                        <button class="tab-btn" data-filter="face">Che mặt</button>
+                        <button class="tab-btn" data-filter="head_pose">Quay đầu</button>
+                        <button class="tab-btn" data-filter="no_face">Che mặt</button>
                     </div>
 
                     <!-- Danh sách hình ảnh -->
@@ -1235,12 +1235,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==================== 6. RENDER DANH SÁCH BẰNG CHỨNG ====================
+    const CATEGORY_NAMES = {
+        'multiple_faces': 'NGƯỜI THỨ 2',
+        'phone': 'ĐIỆN THOẠI',
+        'calculator': 'MÁY TÍNH',
+        'head_pose': 'QUAY ĐẦU',
+        'pose': 'QUAY ĐẦU',
+        'no_face': 'CHE MẶT',
+        'face': 'CHE MẶT',
+        'other_devices': 'THIẾT BỊ KHÁC'
+    };
+
     function renderSnapshots() {
         if (!snapshotsList) return;
 
         let filtered = allSnapshots;
         if (currentFilter !== 'all') {
-            filtered = allSnapshots.filter(s => s.category === currentFilter);
+            filtered = allSnapshots.filter(s =>
+                s.category === currentFilter ||
+                (currentFilter === 'head_pose' && (s.category === 'pose' || s.category === 'head_pose')) ||
+                (currentFilter === 'no_face' && (s.category === 'face' || s.category === 'no_face')) ||
+                (currentFilter === 'pose' && (s.category === 'pose' || s.category === 'head_pose')) ||
+                (currentFilter === 'face' && (s.category === 'face' || s.category === 'no_face'))
+            );
         }
 
         evidenceCount.textContent = `${allSnapshots.length} ảnh`;
@@ -1259,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="snap-card" onclick="openModal('${snap.image_url}', '${snap.type}', '${snap.category}', '${snap.timestamp}', '${snap.duration}')">
                 <div class="snap-thumb-wrap">
                     <img src="${snap.image_url}" alt="${snap.type}" loading="lazy">
-                    <span class="snap-badge ${snap.category}">${snap.category.toUpperCase()}</span>
+                    <span class="snap-badge ${snap.category}">${CATEGORY_NAMES[snap.category] || snap.category.toUpperCase()}</span>
                 </div>
                 <div class="snap-info">
                     <div class="snap-title" title="${snap.type}">${snap.type}</div>
@@ -1289,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openModal = function(url, title, cat, time, duration) {
         modalImg.src = url;
         modalTitle.textContent = title;
-        modalTag.textContent = cat;
+        modalTag.textContent = CATEGORY_NAMES[cat] || cat.toUpperCase();
         modalTag.className = `modal-tag ${cat}`;
         modalTime.textContent = `Thời gian: ${formatTimestamp(time)}`;
         modalDuration.textContent = `Kéo dài: ${duration}`;

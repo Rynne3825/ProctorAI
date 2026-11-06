@@ -45,11 +45,11 @@ class ProctoringState:
         elif "máy tính" in v_lower or "calculator" in v_lower:
             category = "calculator"
         elif "mất mặt" in v_lower or "che camera" in v_lower or "face" in v_lower:
-            category = "face"
+            category = "no_face"
         elif any(k in v_lower for k in ["tai nghe", "earphone", "đồng hồ", "watch", "tài liệu", "book"]):
             category = "other_devices"
         else:
-            category = "pose"
+            category = "head_pose"
 
         with self._lock:
             self.stats["total_violations"] += 1

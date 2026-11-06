@@ -12,17 +12,21 @@ class HeadPoseEstimator:
     và đếm số lượng khuôn mặt (Phát hiện người thứ hai trong phòng thi).
     """
 
-    # 6 điểm mốc chuẩn trên khuôn mặt
+    # 6 điểm mốc chuẩn trên khuôn mặt (MediaPipe Face Mesh index)
     FACE_KEYPOINTS = [1, 199, 33, 263, 61, 291]
 
-    # Mô hình 3D chuẩn khuôn mặt (mm) định nghĩa tĩnh một lần
+    # Mô hình 3D chuẩn khuôn mặt nhân trắc học (Anthropometric 3D Face Model - mm)
+    # Gốc (0, 0, 0) tại đỉnh mũi.
+    # X: Trục ngang (Trái âm, Phải dương).
+    # Y: Trục dọc (Trên âm, Dưới dương theo chiều pixel ảnh).
+    # Z: Trục sâu (Hướng vào trong đầu, lùi xa camera).
     MODEL_POINTS_3D = np.array([
-        (0.0, 0.0, 0.0),             # Đỉnh mũi
-        (0.0, -330.0, -65.0),        # Đáy cằm
-        (-225.0, 170.0, -135.0),     # Mắt trái
-        (225.0, 170.0, -135.0),      # Mắt phải
-        (-150.0, -150.0, -125.0),    # Khóe miệng trái
-        (150.0, -150.0, -125.0)      # Khóe miệng phải
+        (0.0, 0.0, 0.0),             # 1: Đỉnh mũi
+        (0.0, 110.0, 65.0),          # 199: Đáy cằm
+        (-65.0, -50.0, 60.0),        # 33: Khóe mắt trái
+        (65.0, -50.0, 60.0),         # 263: Khóe mắt phải
+        (-40.0, 50.0, 40.0),         # 61: Khóe miệng trái
+        (40.0, 50.0, 40.0)           # 291: Khóe miệng phải
     ], dtype=np.float64)
 
     DIST_COEFFS = np.zeros((4, 1), dtype=np.float64)
@@ -47,7 +51,7 @@ class HeadPoseEstimator:
             min_tracking_confidence=0.5
         )
 
-    def process(self, frame_rgb: np.ndarray) -> Tuple[int, int, Optional[str]]:
+    def process(self, frame_rgb: np.ndarray) -> Tuple[float, float, Optional[str]]:
         """
         Phân tích ảnh RGB và trả về:
         (pitch, yaw, violation_type)
@@ -55,15 +59,15 @@ class HeadPoseEstimator:
         results = self.face_mesh.process(frame_rgb)
 
         if not results.multi_face_landmarks:
-            return 0, 0, "Mất mặt / Che camera"
+            return 0.0, 0.0, "Mất mặt / Che camera"
 
         num_faces = len(results.multi_face_landmarks)
 
         # CẢNH BÁO ĐẶC BIỆT: Phát hiện có người thứ 2 trở lên trong khung hình
         if num_faces > 1:
-            return 0, 0, f"Phát hiện {num_faces} người (Có người thứ hai)"
+            return 0.0, 0.0, f"Phát hiện {num_faces} người (Có người thứ hai)"
 
-        # Khi chỉ có đúng 1 thí sinh: Tính toán góc quay đầu solvePnP
+        # Khi chỉ có đúng 1 thí sinh: Tính toán góc quay đầu solvePnP (SQPNP)
         landmarks = results.multi_face_landmarks[0].landmark
 
         pts_2d = np.array([
@@ -71,20 +75,22 @@ class HeadPoseEstimator:
             for idx in self.FACE_KEYPOINTS
         ], dtype=np.float64)
 
-        pts_3d = np.array([
-            [landmarks[idx].x * self.cam_w, landmarks[idx].y * self.cam_h, landmarks[idx].z * self.cam_w]
-            for idx in self.FACE_KEYPOINTS
-        ], dtype=np.float64)
-
-        success, rot_vec, _ = cv2.solvePnP(pts_3d, pts_2d, self.cam_matrix, self.DIST_COEFFS)
+        success, rot_vec, _ = cv2.solvePnP(
+            self.MODEL_POINTS_3D,
+            pts_2d,
+            self.cam_matrix,
+            self.DIST_COEFFS,
+            flags=cv2.SOLVEPNP_SQPNP
+        )
         if not success:
-            return 0, 0, None
+            return 0.0, 0.0, None
 
         rot_mat, _ = cv2.Rodrigues(rot_vec)
         angles, _, _, _, _, _ = cv2.RQDecomp3x3(rot_mat)
 
-        pitch = int(angles[0] * 360)
-        yaw = int(angles[1] * 360)
+        # RQDecomp3x3 đã trả về độ (°), làm tròn 1 chữ số thập phân
+        pitch = round(float(angles[0]), 1)
+        yaw = round(float(angles[1]), 1)
 
         rules = self.cfg.head_pose
         violation = None
@@ -96,9 +102,9 @@ class HeadPoseEstimator:
         elif yaw < -rules.yaw_side_threshold:
             violation = "Quay sang phải"
         elif pitch > rules.pitch_threshold:
-            violation = "Ngửa mặt lên"
-        elif pitch < -rules.pitch_threshold:
             violation = "Cúi xuống"
+        elif pitch < -rules.pitch_threshold:
+            violation = "Ngửa mặt lên"
 
         return pitch, yaw, violation
 

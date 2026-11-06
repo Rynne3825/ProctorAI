@@ -47,6 +47,7 @@ class CameraWorker(threading.Thread):
     def run(self):
         frame_count = 0
         violation_start: Optional[float] = None
+        current_group: Optional[str] = None
         current_violation: Optional[str] = None
         has_snapped_current = False
         last_warning_time = 0.0
@@ -67,6 +68,7 @@ class CameraWorker(threading.Thread):
                     self.latest_jpeg = standby_bytes
 
                 violation_start = None
+                current_group = None
                 current_violation = None
                 has_snapped_current = False
                 cached_yolo_violation = None
@@ -99,46 +101,57 @@ class CameraWorker(threading.Thread):
             # Quét MediaPipe Face Mesh (Đếm số người & hướng đầu)
             pitch, yaw, pose_violation = self.head_pose.process(frame_rgb)
 
-            # Đánh giá vi phạm (Ưu tiên: Có người thứ 2 > Dùng thiết bị cấm > Tư thế đầu)
-            active_violation = None
+            # Đánh giá vi phạm và phân nhóm (Ưu tiên: Có người thứ 2 > Thiết bị cấm > Che mặt / Hướng đầu)
+            active_violation: Optional[str] = None
+            active_group: Optional[str] = None
+
             if pose_violation and "người" in pose_violation.lower():
                 active_violation = pose_violation
+                active_group = "MULTIPLE_FACES"
             elif cached_yolo_violation:
                 active_violation = cached_yolo_violation
-            else:
+                active_group = "DEVICE"
+            elif pose_violation:
                 active_violation = pose_violation
+                active_group = "NO_FACE" if ("mất mặt" in pose_violation.lower() or "che camera" in pose_violation.lower()) else "HEAD_POSE"
 
-            if active_violation != current_violation:
-                violation_start = now if active_violation else None
+            # Ổn định bộ đếm thời gian: Không reset timer khi chỉ đổi góc quay chi tiết trong cùng một nhóm
+            if active_group != current_group:
+                violation_start = now if active_group else None
+                current_group = active_group
                 current_violation = active_violation
                 has_snapped_current = False
+            else:
+                current_violation = active_violation
 
             duration = (now - violation_start) if violation_start else 0.0
 
-            # Xử lý theo yêu cầu: Nếu phát hiện có người thứ hai -> CHỤP HÌNH NGAY LẬP TỨC (không cần bấm giờ)
-            is_multiple_people = bool(active_violation and ("người" in active_violation.lower()))
-
-            if is_multiple_people:
+            # Đánh giá cảnh báo
+            if active_group == "MULTIPLE_FACES":
+                # Người thứ hai: vi phạm nghiêm trọng -> chụp bằng chứng ngay lập tức (0.0s)
                 is_warning = True
+            elif active_group == "NO_FACE":
+                is_warning = duration > rules.no_face_threshold_seconds
+            elif active_group in ("DEVICE", "HEAD_POSE"):
+                is_warning = duration > rules.violation_threshold_seconds
             else:
-                thresh = rules.no_face_threshold_seconds if active_violation == "Mất mặt / Che camera" else rules.violation_threshold_seconds
-                is_warning = duration > thresh
+                is_warning = False
 
-            # Lưu bằng chứng ngay lập tức
+            # Lưu bằng chứng vi phạm
             if is_warning and not has_snapped_current:
-                save_violation_snapshot(active_violation, duration, frame)
+                save_violation_snapshot(current_violation or "Vi phạm", duration, frame)
                 has_snapped_current = True
                 last_warning_time = now
             elif is_warning and (now - last_warning_time > rules.snap_interval_extended_seconds):
-                save_violation_snapshot(active_violation, duration, frame)
+                save_violation_snapshot(current_violation or "Vi phạm", duration, frame)
                 last_warning_time = now
 
             # Thông điệp trạng thái HUD
             if is_warning:
-                dur_text = f" ({duration:.1f}s)" if not is_multiple_people else " (CHỤP NGAY)"
-                status_text, status_color = f"CẢNH BÁO VI PHẠM: {active_violation}{dur_text}", (0, 0, 255)
+                dur_text = " (TỨC THỜI)" if active_group == "MULTIPLE_FACES" else f" ({duration:.1f}s)"
+                status_text, status_color = f"CẢNH BÁO VI PHẠM: {current_violation}{dur_text}", (0, 0, 255)
             elif active_violation:
-                status_text, status_color = f"Đang chú ý: {active_violation} ({duration:.1f}s)", (0, 255, 255)
+                status_text, status_color = f"Đang chú ý: {current_violation} ({duration:.1f}s)", (0, 255, 255)
             else:
                 status_text, status_color = "BÌNH THƯỜNG - HỢP LỆ", (0, 255, 0)
 

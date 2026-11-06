@@ -29,11 +29,19 @@ def index_page():
 
 
 def stream_generator():
-    while True:
-        frame_bytes = camera_worker.get_jpeg()
-        if frame_bytes is not None:
-            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
-        time.sleep(0.03)
+    try:
+        while True:
+            frame_bytes = camera_worker.get_jpeg()
+            if frame_bytes is not None:
+                yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
+            time.sleep(0.03)
+    except (GeneratorExit, Exception):
+        return
+
+
+@app.on_event("shutdown")
+def on_shutdown():
+    camera_worker.stop()
 
 
 @app.get("/video_feed")

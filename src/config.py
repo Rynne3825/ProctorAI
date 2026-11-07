@@ -30,9 +30,9 @@ class RulesConfig:
 
 @dataclass
 class HeadPoseConfig:
-    yaw_backward_threshold: float = 25.0
-    yaw_side_threshold: float = 10.0
-    pitch_threshold: float = 10.0
+    yaw_backward_threshold: float = 45.0
+    yaw_side_threshold: float = 22.0
+    pitch_threshold: float = 20.0
 
 
 @dataclass

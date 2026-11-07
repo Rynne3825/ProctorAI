@@ -15,9 +15,9 @@ rules:
   snap_interval_extended_seconds: 10.0
 
 head_pose:
-  yaw_backward_threshold: 25.0
-  yaw_side_threshold: 10.0
-  pitch_threshold: 10.0
+  yaw_backward_threshold: 45.0  # Quay ngoái hẳn đầu ra sau (> 45 độ)
+  yaw_side_threshold: 22.0      # Quay sang trái/phải rõ rệt (> 22 độ)
+  pitch_threshold: 20.0         # Cúi gằm hoặc ngửa hẳn mặt (> 20 độ)
 
 yolo:
   model_path: "models/best.pt"

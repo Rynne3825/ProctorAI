@@ -283,12 +283,24 @@ body {
 /* ================= 3. DASHBOARD MAIN BODY (2 COLS) ================= */
 .dashboard-body {
     display: grid;
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr 400px;
     gap: 20px;
-    align-items: start;
+    align-items: stretch;
 }
 
-/* CỘT TRÁI: VIDEO & CONTROLS */
+/* CỘT TRÁI & PHẢI ĐỒNG BỘ CHIỀU CAO */
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .video-card {
     background: var(--bg-surface);
     border: 1px solid var(--border-subtle);
@@ -297,6 +309,7 @@ body {
     box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .video-card-header {
@@ -557,17 +570,18 @@ body {
     box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
-    height: 600px;
+    height: 100%;
     overflow: hidden;
 }
 
 .gallery-header {
     background: #0b1220;
-    padding: 14px 20px;
+    padding: 12px 20px;
     border-bottom: 1px solid var(--border-subtle);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-height: 50px;
 }
 
 .gallery-title {
@@ -827,6 +841,45 @@ body {
     font-weight: 500;
 }
 
+/* GALLERY FOOTER ĐỒNG BỘ ĐÁY VỚI CỘT TRÁI */
+.gallery-footer {
+    padding: 14px 20px;
+    background: #0b1220;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 64px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.gallery-footer-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.footer-dot-live {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.gallery-footer-tag {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    color: #60a5fa;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 10.5px;
+    letter-spacing: 0.2px;
+}
+
 /* ================= 5. MODAL ================= */
 .modal-backdrop {
     display: none;
@@ -946,7 +999,7 @@ body {
 @media (max-width: 1200px) {
     .kpi-grid { grid-template-columns: repeat(3, 1fr); }
     .dashboard-body { grid-template-columns: 1fr; }
-    .gallery-card { height: 420px; }
+    .gallery-card { height: 520px; }
 }
 
 @media (max-width: 768px) {
@@ -1138,6 +1191,15 @@ body {
                     <!-- Danh sách hình ảnh -->
                     <div class="gallery-grid" id="snapshotsList">
                         <!-- Render qua JavaScript -->
+                    </div>
+
+                    <!-- Gallery Footer cân đối bằng đáy với cột trái -->
+                    <div class="gallery-footer">
+                        <div class="gallery-footer-status">
+                            <span class="footer-dot-live"></span>
+                            <span>Tự động chụp & lưu bằng chứng</span>
+                        </div>
+                        <span class="gallery-footer-tag">Auto-Save: screenshots/</span>
                     </div>
                 </div>
             </div>

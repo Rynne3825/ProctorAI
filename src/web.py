@@ -28,6 +28,15 @@ def index_page():
     return HTMLResponse(content="<h1>ProctorAI đang khởi động...</h1>")
 
 
+@app.get("/simulation", response_class=HTMLResponse)
+def simulation_page():
+    sim_file = os.path.join(BASE_DIR, "simulation_pnp.html")
+    if os.path.exists(sim_file):
+        with open(sim_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h1>Không tìm thấy simulation_pnp.html</h1>")
+
+
 def stream_generator():
     try:
         while True:

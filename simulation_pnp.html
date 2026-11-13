@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProctorAI - Mô Phỏng Trực Quan 3D Thuật Toán solvePnP</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-dark: #070b14;
+            --bg-surface: #0e1526;
+            --bg-surface-elevated: #141f36;
+            --border-subtle: #1e293b;
+            --border-focus: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --color-primary: #38bdf8;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --color-purple: #8b5cf6;
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* HEADER */
+        .sim-header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-sic {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--border-focus);
+            background: #1e293b;
+        }
+
+        /* MAIN CONTENT */
+        .sim-container {
+            max-width: 1540px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+
+        /* SPLIT VIEW (3D vs 2D) */
+        .viewports-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            height: 480px;
+        }
+
+        .viewport-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .card-header {
+            background: #090e1b;
+            padding: 10px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tag-info {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background: #040711;
+            overflow: hidden;
+        }
+
+        #threejsCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #camera2dCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .overlay-instruction {
+            position: absolute;
+            bottom: 12px;
+            left: 14px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        /* CONTROLS BAR */
+        .controls-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .sliders-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .slider-row {
+            display: grid;
+            grid-template-columns: 160px 1fr 60px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-label {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .slider-val {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            text-align: right;
+            color: var(--color-primary);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* PRESETS & STATUS */
+        .presets-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .presets-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn-preset {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-preset:hover {
+            border-color: var(--border-focus);
+            background: #1e293b;
+            color: #38bdf8;
+        }
+
+        .status-badge {
+            margin-top: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+
+        .status-badge.warning {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+        }
+
+        .status-badge.danger {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #f87171;
+        }
+
+        /* EXPLANATION MATH CARDS */
+        .math-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .math-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .math-step {
+            font-size: 11px;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .math-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .math-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .math-code {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            background: #050811;
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: #38bdf8;
+            border: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. HEADER -->
+    <header class="sim-header">
+        <div class="brand-title">
+            <span class="badge-sic">SIC CAPSTONE</span>
+            <h1 style="font-size: 17px; font-weight: 800; letter-spacing: -0.3px;">
+                Mô Phỏng Trực Quan Hình Học: <span style="color: #38bdf8;">solvePnP (3D &rarr; 2D)</span>
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="/" class="btn-back">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                <span>Về Bảng Điều Khiển</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- 2. CONTAINER -->
+    <main class="sim-container">
+
+        <!-- VIEWPORTS (3D WORLD vs 2D CAMERA) -->
+        <div class="viewports-grid">
+            <!-- CỘT TRÁI: 3D WORLD -->
+            <div class="viewport-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span style="color: #38bdf8;">🌐 KHÔNG GIAN 3D THẬT</span>
+                        <span>(Khuôn Mặt & Ống Kính Camera)</span>
+                    </div>
+                    <span class="tag-info">Đơn vị: Milimet (mm)</span>
+                </div>
+                <div class="canvas-area" id="threeContainer">
+                    <div class="overlay-instruction">💡 Dùng chuột trái xoay góc nhìn 3D | Cuộn chuột để phóng to/thu nhỏ</div>
+                </div>
+            </div>
+
+            <!-- CỘT PHẢI: 2D CAMERA SENSOR -->
+            <div class="viewport-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span style="color: #10b981;">📷 CẢM BIẾN CAMERA 2D</span>
+                        <span>(Những gì MediaPipe & OpenCV nhìn thấy)</span>
+                    </div>
+                    <span class="tag-info">Khung hình: 640 x 480 px</span>
+                </div>
+                <div class="canvas-area">
+                    <canvas id="camera2dCanvas" width="640" height="480"></canvas>
+                    <div class="overlay-instruction" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">
+                        🎯 6 Điểm pixel biến dạng khi xoay đầu
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTROLS & PRESETS -->
+        <div class="controls-card">
+            <!-- SLIDERS -->
+            <div class="sliders-group">
+                <!-- YAW -->
+                <div class="slider-row">
+                    <label class="slider-label">
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                        <span>Yaw (Trái / Phải):</span>
+                    </label>
+                    <input type="range" id="yawSlider" min="-90" max="90" step="1" value="0">
+                    <span class="slider-val" id="yawVal">0.0°</span>
+                </div>
+                <!-- PITCH -->
+                <div class="slider-row">
+                    <label class="slider-label">
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                        <span>Pitch (Cúi / Ngửa):</span>
+                    </label>
+                    <input type="range" id="pitchSlider" min="-45" max="45" step="1" value="0">
+                    <span class="slider-val" id="pitchVal">0.0°</span>
+                </div>
+                <!-- ROLL -->
+                <div class="slider-row">
+                    <label class="slider-label">
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                        <span>Roll (Nghiêng vai):</span>
+                    </label>
+                    <input type="range" id="rollSlider" min="-30" max="30" step="1" value="0">
+                    <span class="slider-val" id="rollVal">0.0°</span>
+                </div>
+            </div>
+
+            <!-- PRESETS & STATUS -->
+            <div class="presets-group">
+                <div class="presets-title">Thử Nhanh Các Kịch Bản Trong Phòng Thi:</div>
+                <div class="preset-buttons">
+                    <button class="btn-preset" onclick="setPose(0, 0, 0)">🟢 Ngồi Thẳng</button>
+                    <button class="btn-preset" onclick="setPose(28, 0, 0)">🟡 Quay Trái (28°)</button>
+                    <button class="btn-preset" onclick="setPose(-28, 0, 0)">🟡 Quay Phải (-28°)</button>
+                    <button class="btn-preset" onclick="setPose(0, 25, 0)">🟡 Cúi Gằm Mặt (25°)</button>
+                    <button class="btn-preset" onclick="setPose(55, 0, 0)">🔴 Ngoái Ra Sau (55°)</button>
+                    <button class="btn-preset" id="btnAnim" onclick="toggleAnimation()">▶️ Tự Động Xoay</button>
+                </div>
+                <div class="status-badge" id="simStatusBadge">
+                    <span id="simStatusText">TRẠNG THÁI: HỢP LỆ (NGỒI THẲNG)</span>
+                    <span id="pnpMatchText" style="font-family: var(--font-mono); font-size: 11px;">solvePnP Khớp: 100%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 BƯỚC GIẢI THÍCH TOÁN HỌC DÀNH CHO THẦY CÔ -->
+        <div class="math-cards-grid">
+            <div class="math-card">
+                <div class="math-step">Bước 1: Mô Hình 3D Chuẩn</div>
+                <div class="math-title">Tọa Độ Cố Định (mm)</div>
+                <div class="math-desc">Khoảng cách giải phẫu giữa 6 điểm mốc (Mũi, cằm, mắt, miệng) được định nghĩa cố định trong không gian vật thể.</div>
+                <div class="math-code">MODEL_POINTS_3D (mm)</div>
+            </div>
+
+            <div class="math-card">
+                <div class="math-step">Bước 2: Chiếu Tia Sáng 2D</div>
+                <div class="math-title">Biến Dạng Khi Quay Đầu</div>
+                <div class="math-desc">Khi xoay đầu, các tia sáng qua tâm ống kính làm các điểm 2D trên cảm biến bị co ngắn hoặc dạt xa nhau rõ rệt.</div>
+                <div class="math-code">pts_2d = K · [R|t] · pts_3d</div>
+            </div>
+
+            <div class="math-card">
+                <div class="math-step">Bước 3: Giải Thuật SQPNP</div>
+                <div class="math-title">Khớp Ngược Tìm Ma Trận R</div>
+                <div class="math-desc">OpenCV giải bài toán: "Xoay khối 3D một góc bao nhiêu để khi chiếu tia sáng qua camera thì khớp khít khịt lên 6 điểm 2D?"</div>
+                <div class="math-code">cv2.solvePnP(SQPNP) &rarr; R</div>
+            </div>
+
+            <div class="math-card">
+                <div class="math-step">Bước 4: Phân Rã RQ (Euler)</div>
+                <div class="math-title">Tách Góc Độ (°)</div>
+                <div class="math-desc">Phân rã ma trận quay R thành 3 góc Euler quen thuộc: Pitch (cúi/ngửa), Yaw (trái/phải), Roll (nghiêng vai) chuẩn đơn vị độ.</div>
+                <div class="math-code">cv2.RQDecomp3x3 &rarr; (°)</div >
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LOGIC MÔ PHỎNG THREE.JS & 2D PROJECTION -->
+    <script>
+        // 1. TỌA ĐỘ 6 ĐIỂM NHÂN TRẮC HỌC 3D (Đúng theo src/head_pose.py)
+        // Lưu ý trục Three.js: X sang phải, Y hướng lên trên, Z hướng ra trước
+        const MODEL_POINTS_3D = [
+            { id: 1,   name: "Đỉnh Mũi",   x: 0.0,   y: 0.0,    z: 0.0,    color: 0xf59e0b },
+            { id: 199, name: "Đáy Cằm",    x: 0.0,   y: -110.0, z: -65.0,  color: 0xa855f7 },
+            { id: 33,  name: "Mắt Trái",   x: -65.0, y: 50.0,   z: -60.0,  color: 0x06b6d4 },
+            { id: 263, name: "Mắt Phải",   x: 65.0,  y: 50.0,   z: -60.0,  color: 0x3b82f6 },
+            { id: 61,  name: "Miệng Trái", x: -40.0, y: -50.0,  z: -40.0,  color: 0xec4899 },
+            { id: 291, name: "Miệng Phải", x: 40.0,  y: -50.0,  z: -40.0,  color: 0xef4444 }
+        ];
+
+        // Thông số Camera (Pinhole model 640x480)
+        const CAM_W = 640;
+        const CAM_H = 480;
+        const FOCAL_LENGTH = 640; // fx = fy = W
+        const CX = CAM_W / 2;
+        const CY = CAM_H / 2;
+        const CAM_DIST_Z = 650; // Khoảng cách đặt camera từ mặt người (mm)
+
+        // Các biến trạng thái góc hiện tại
+        let currentYaw = 0;   // độ
+        let currentPitch = 0; // độ
+        let currentRoll = 0;  // độ
+        let isAnimating = false;
+        let animTime = 0;
+
+        // Elements
+        const yawSlider = document.getElementById('yawSlider');
+        const pitchSlider = document.getElementById('pitchSlider');
+        const rollSlider = document.getElementById('rollSlider');
+        const yawVal = document.getElementById('yawVal');
+        const pitchVal = document.getElementById('pitchVal');
+        const rollVal = document.getElementById('rollVal');
+        const simStatusText = document.getElementById('simStatusText');
+        const simStatusBadge = document.getElementById('simStatusBadge');
+        const canvas2d = document.getElementById('camera2dCanvas');
+        const ctx2d = canvas2d.getContext('2d');
+
+        // ================= THREE.JS 3D WORLD =================
+        const container3d = document.getElementById('threeContainer');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x060913);
+
+        const camera3d = new THREE.PerspectiveCamera(45, container3d.clientWidth / container3d.clientHeight, 1, 3000);
+        camera3d.position.set(450, 250, 950);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container3d.clientWidth, container3d.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container3d.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera3d, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 300);
+
+        // Ánh sáng
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
+        dirLight.position.set(200, 400, 500);
+        scene.add(dirLight);
+
+        // Grid mặt phẳng sàn
+        const grid = new THREE.GridHelper(1200, 24, 0x1e293b, 0x0f172a);
+        grid.position.y = -220;
+        grid.position.z = 300;
+        scene.add(grid);
+
+        // Group Đầu 3D
+        const headGroup = new THREE.Group();
+        headGroup.position.set(0, 0, 0); // Đặt ở gốc tọa độ
+        scene.add(headGroup);
+
+        // Khung dây mặt người tượng trưng (Stylized Wireframe Head)
+        const headGeometry = new THREE.SphereGeometry(95, 16, 12);
+        headGeometry.scale(1.0, 1.35, 1.15);
+        const headMaterial = new THREE.MeshBasicMaterial({
+            color: 0x1e293b,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.35
+        });
+        const headMesh = new THREE.Mesh(headGeometry, headMaterial);
+        headMesh.position.set(0, -15, -45);
+        headGroup.add(headMesh);
+
+        // Tạo 6 mốc hình cầu phát sáng
+        const pointMeshes = [];
+        MODEL_POINTS_3D.forEach((pt) => {
+            const geom = new THREE.SphereGeometry(7, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({
+                color: pt.color,
+                emissive: pt.color,
+                emissiveIntensity: 0.6,
+                roughness: 0.3
+            });
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.position.set(pt.x, pt.y, pt.z);
+            headGroup.add(mesh);
+            pointMeshes.push(mesh);
+        });
+
+        // 3 Trục tọa độ từ đỉnh mũi trong 3D
+        const axesLength = 80;
+        const noseAxesGroup = new THREE.Group();
+        // Trục X (Đỏ)
+        const xArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), axesLength, 0xef4444, 15, 6);
+        // Trục Y (Xanh lá)
+        const yArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), axesLength, 0x10b981, 15, 6);
+        // Trục Z (Xanh dương)
+        const zArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), axesLength, 0x38bdf8, 18, 7);
+        noseAxesGroup.add(xArrow);
+        noseAxesGroup.add(yArrow);
+        noseAxesGroup.add(zArrow);
+        headGroup.add(noseAxesGroup);
+
+        // Mô hình Camera ảo đặt tại CAM_DIST_Z
+        const camGroup = new THREE.Group();
+        camGroup.position.set(0, 0, CAM_DIST_Z);
+        scene.add(camGroup);
+
+        // Hình kim tự tháp thấu kính camera
+        const frustumGeom = new THREE.ConeGeometry(55, 90, 4);
+        frustumGeom.rotateX(Math.PI / 2);
+        frustumGeom.rotateZ(Math.PI / 4);
+        const frustumMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, opacity: 0.7, transparent: true });
+        const camFrustum = new THREE.Mesh(frustumGeom, frustumMat);
+        camGroup.add(camFrustum);
+
+        // Khung cảm biến 2D phía sau thấu kính
+        const sensorGeom = new THREE.PlaneGeometry(160, 120);
+        const sensorMat = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true, opacity: 0.5, transparent: true });
+        const sensorMesh = new THREE.Mesh(sensorGeom, sensorMat);
+        sensorMesh.position.z = 45;
+        camGroup.add(sensorMesh);
+
+        // Tia chiếu phối cảnh (Projection Rays) từ 6 điểm 3D đến tâm Camera
+        const rayLines = [];
+        for (let i = 0; i < 6; i++) {
+            const rayGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+            const rayMat = new THREE.LineDashedMaterial({
+                color: MODEL_POINTS_3D[i].color,
+                dashSize: 15,
+                gapSize: 10,
+                opacity: 0.65,
+                transparent: true
+            });
+            const rayLine = new THREE.Line(rayGeom, rayMat);
+            rayLine.computeLineDistances();
+            scene.add(rayLine);
+            rayLines.push(rayLine);
+        }
+
+        // ================= LOGIC XOAY & CHIẾU 3D -> 2D =================
+        function updateSimulation() {
+            // Đổi độ sang Radian
+            const radYaw = THREE.MathUtils.degToRad(currentYaw);
+            const radPitch = THREE.MathUtils.degToRad(currentPitch);
+            const radRoll = THREE.MathUtils.degToRad(currentRoll);
+
+            // 1. Áp dụng góc xoay cho Mô hình 3D Head
+            headGroup.rotation.order = 'YXZ';
+            headGroup.rotation.y = radYaw;   // Yaw xoay quanh Y
+            headGroup.rotation.x = radPitch; // Pitch xoay quanh X
+            headGroup.rotation.z = radRoll;  // Roll xoay quanh Z
+
+            // 2. Tính toán ma trận biến đổi để lấy tọa độ thế giới của 6 điểm
+            headGroup.updateMatrixWorld(true);
+
+            const pts2D = [];
+            const worldPts3D = [];
+
+            for (let i = 0; i < MODEL_POINTS_3D.length; i++) {
+                const worldPos = new THREE.Vector3();
+                pointMeshes[i].getWorldPosition(worldPos);
+                worldPts3D.push(worldPos);
+
+                // Cập nhật tia chiếu từ mốc đến tâm camera (0, 0, CAM_DIST_Z)
+                const camCenter = new THREE.Vector3(0, 0, CAM_DIST_Z);
+                const rayGeom = rayLines[i].geometry;
+                rayGeom.setFromPoints([worldPos, camCenter]);
+                rayLines[i].computeLineDistances();
+
+                // 3. Công thức phối cảnh Pinhole:
+                // Khoảng cách theo trục Z từ vật tới thấu kính
+                const dZ = CAM_DIST_Z - worldPos.z;
+                
+                // Chiếu phối cảnh lên cảm biến 2D
+                // u = (X / dZ) * fx + cx
+                // v = (-Y / dZ) * fy + cy  (âm Y do trục pixel màn hình chúc xuống)
+                const u = (worldPos.x / dZ) * FOCAL_LENGTH + CX;
+                const v = (-worldPos.y / dZ) * FOCAL_LENGTH + CY;
+                pts2D.push({ u, v, name: MODEL_POINTS_3D[i].name, id: MODEL_POINTS_3D[i].id, color: MODEL_POINTS_3D[i].color });
+            }
+
+            // 4. Chiếu vector mũi (Pose Axes) lên 2D
+            const noseWorld = worldPts3D[0];
+            const noseDistZ = CAM_DIST_Z - noseWorld.z;
+            const noseU = (noseWorld.x / noseDistZ) * FOCAL_LENGTH + CX;
+            const noseV = (-noseWorld.y / noseDistZ) * FOCAL_LENGTH + CY;
+
+            // Đầu vector trục Z mũi (hướng đâm ra ngoài)
+            const zVector = new THREE.Vector3(0, 0, 75).applyEuler(headGroup.rotation).add(noseWorld);
+            const zDistZ = CAM_DIST_Z - zVector.z;
+            const zU = (zVector.x / zDistZ) * FOCAL_LENGTH + CX;
+            const zV = (-zVector.y / zDistZ) * FOCAL_LENGTH + CY;
+
+            // 5. Vẽ ảnh trên Canvas 2D
+            render2DCanvas(pts2D, { u: noseU, v: noseV }, { u: zU, v: zV });
+
+            // 6. Cập nhật thẻ trạng thái vi phạm
+            updateStatusBadge();
+        }
+
+        // ================= VẼ MÀN HÌNH CẢM BIẾN CAMERA 2D =================
+        function render2DCanvas(pts, nose2d, zAxis2d) {
+            ctx2d.clearRect(0, 0, CAM_W, CAM_H);
+
+            // Nền đen radar camera
+            ctx2d.fillStyle = '#060a17';
+            ctx2d.fillRect(0, 0, CAM_W, CAM_H);
+
+            // Lưới pixel camera
+            ctx2d.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx2d.lineWidth = 1;
+            for (let x = 0; x < CAM_W; x += 40) { ctx2d.beginPath(); ctx2d.moveTo(x, 0); ctx2d.lineTo(x, CAM_H); ctx2d.stroke(); }
+            for (let y = 0; y < CAM_H; y += 40) { ctx2d.beginPath(); ctx2d.moveTo(0, y); ctx2d.lineTo(CAM_W, y); ctx2d.stroke(); }
+
+            // Tâm camera (Principal Point CX, CY)
+            ctx2d.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+            ctx2d.setLineDash([4, 4]);
+            ctx2d.beginPath(); ctx2d.moveTo(CX, 0); ctx2d.lineTo(CX, CAM_H); ctx2d.stroke();
+            ctx2d.beginPath(); ctx2d.moveTo(0, CY); ctx2d.lineTo(CAM_W, CY); ctx2d.stroke();
+            ctx2d.setLineDash([]);
+
+            // Đường nối đa giác giữa các mốc khuôn mặt
+            // [33 (Mắt T), 263 (Mắt P), 291 (Miệng P), 199 (Cằm), 61 (Miệng T)]
+            ctx2d.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+            ctx2d.lineWidth = 1.8;
+            ctx2d.beginPath();
+            ctx2d.moveTo(pts[2].u, pts[2].v); // Mắt T
+            ctx2d.lineTo(pts[3].u, pts[3].v); // Mắt P
+            ctx2d.lineTo(pts[5].u, pts[5].v); // Miệng P
+            ctx2d.lineTo(pts[1].u, pts[1].v); // Cằm
+            ctx2d.lineTo(pts[4].u, pts[4].v); // Miệng T
+            ctx2d.closePath();
+            ctx2d.stroke();
+
+            // Đường nối mũi tới mắt và cằm
+            ctx2d.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+            ctx2d.beginPath();
+            ctx2d.moveTo(pts[0].u, pts[0].v); ctx2d.lineTo(pts[2].u, pts[2].v);
+            ctx2d.moveTo(pts[0].u, pts[0].v); ctx2d.lineTo(pts[3].u, pts[3].v);
+            ctx2d.moveTo(pts[0].u, pts[0].v); ctx2d.lineTo(pts[1].u, pts[1].v);
+            ctx2d.stroke();
+
+            // Vẽ trục Z (Hướng nhìn từ mũi)
+            ctx2d.strokeStyle = '#38bdf8';
+            ctx2d.lineWidth = 3.5;
+            ctx2d.beginPath();
+            ctx2d.moveTo(nose2d.u, nose2d.v);
+            ctx2d.lineTo(zAxis2d.u, zAxis2d.v);
+            ctx2d.stroke();
+            // Đầu mũi tên
+            ctx2d.fillStyle = '#38bdf8';
+            ctx2d.beginPath();
+            ctx2d.arc(zAxis2d.u, zAxis2d.v, 4.5, 0, Math.PI * 2);
+            ctx2d.fill();
+
+            // Vẽ 6 điểm mốc pixel
+            pts.forEach((pt) => {
+                const hex = '#' + pt.color.toString(16).padStart(6, '0');
+                ctx2d.fillStyle = hex;
+                ctx2d.beginPath();
+                ctx2d.arc(pt.u, pt.v, 5.5, 0, Math.PI * 2);
+                ctx2d.fill();
+                ctx2d.strokeStyle = '#ffffff';
+                ctx2d.lineWidth = 1.5;
+                ctx2d.stroke();
+
+                // Nhãn tọa độ
+                ctx2d.fillStyle = '#cbd5e1';
+                ctx2d.font = '10px JetBrains Mono';
+                ctx2d.fillText(`${pt.name}: (${pt.u.toFixed(0)}, ${pt.v.toFixed(0)})`, pt.u + 9, pt.v - 5);
+            });
+
+            // Watermark HUD
+            ctx2d.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx2d.font = '12px JetBrains Mono';
+            ctx2d.fillText(`solvePnP 2D Projection Feed`, 16, 24);
+            ctx2d.fillStyle = '#38bdf8';
+            ctx2d.fillText(`Pitch: ${currentPitch > 0 ? '+' : ''}${currentPitch.toFixed(1)}° | Yaw: ${currentYaw > 0 ? '+' : ''}${currentYaw.toFixed(1)}°`, 16, 42);
+        }
+
+        // ================= CẬP NHẬT TRẠNG THÁI =================
+        function updateStatusBadge() {
+            yawVal.textContent = (currentYaw > 0 ? '+' : '') + currentYaw.toFixed(1) + '°';
+            pitchVal.textContent = (currentPitch > 0 ? '+' : '') + currentPitch.toFixed(1) + '°';
+            rollVal.textContent = (currentRoll > 0 ? '+' : '') + currentRoll.toFixed(1) + '°';
+
+            simStatusBadge.className = 'status-badge';
+            if (Math.abs(currentYaw) > 35) {
+                simStatusBadge.classList.add('danger');
+                simStatusText.textContent = '🚨 VI PHẠM: QUAY HẲN RA SAU (NGOÁI ĐẦU)';
+            } else if (currentYaw > 22) {
+                simStatusBadge.classList.add('warning');
+                simStatusText.textContent = '⚠️ CHÚ Ý: QUAY SANG TRÁI NHÌN BÀI';
+            } else if (currentYaw < -22) {
+                simStatusBadge.classList.add('warning');
+                simStatusText.textContent = '⚠️ CHÚ Ý: QUAY SANG PHẢI NHÌN BÀI';
+            } else if (currentPitch > 20) {
+                simStatusBadge.classList.add('warning');
+                simStatusText.textContent = '⚠️ CHÚ Ý: CÚI ĐẦU XUỐNG GẦM BÀN';
+            } else if (currentPitch < -20) {
+                simStatusBadge.classList.add('warning');
+                simStatusText.textContent = '⚠️ CHÚ Ý: NGỬA MẶT LÊN TRẦN NHÀ';
+            } else {
+                simStatusText.textContent = '✅ BÌNH THƯỜNG - HỢP LỆ (NGỒI THẲNG)';
+            }
+        }
+
+        // Event listeners cho thanh kéo
+        yawSlider.addEventListener('input', (e) => { currentYaw = parseFloat(e.target.value); updateSimulation(); });
+        pitchSlider.addEventListener('input', (e) => { currentPitch = parseFloat(e.target.value); updateSimulation(); });
+        rollSlider.addEventListener('input', (e) => { currentRoll = parseFloat(e.target.value); updateSimulation(); });
+
+        function setPose(yaw, pitch, roll) {
+            isAnimating = false;
+            document.getElementById('btnAnim').textContent = '▶️ Tự Động Xoay';
+            currentYaw = yaw; currentPitch = pitch; currentRoll = roll;
+            yawSlider.value = yaw; pitchSlider.value = pitch; rollSlider.value = roll;
+            updateSimulation();
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            document.getElementById('btnAnim').textContent = isAnimating ? '⏸️ Tạm Dừng' : '▶️ Tự Động Xoay';
+        }
+
+        // Render Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            if (isAnimating) {
+                animTime += 0.025;
+                currentYaw = Math.sin(animTime) * 42; // Quét từ -42° đến +42°
+                currentPitch = Math.cos(animTime * 0.7) * 15;
+                yawSlider.value = currentYaw;
+                pitchSlider.value = currentPitch;
+                updateSimulation();
+            }
+
+            renderer.render(scene, camera3d);
+        }
+
+        // Khởi động
+        window.addEventListener('resize', () => {
+            const w = container3d.clientWidth;
+            const h = container3d.clientHeight;
+            camera3d.aspect = w / h;
+            camera3d.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        });
+
+        updateSimulation();
+        animate();
+    </script>
+</body>
+</html>

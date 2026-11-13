@@ -63,6 +63,7 @@ class CameraWorker(threading.Thread):
             # 1. STANDBY: Camera tắt, CPU 0%
             if not is_active:
                 self._release_camera()
+                self.head_pose.reset_state()
                 standby_bytes = self.hud.get_standby_jpeg(self.cfg.camera.width, self.cfg.camera.height)
                 with self._lock:
                     self.latest_jpeg = standby_bytes
@@ -128,8 +129,8 @@ class CameraWorker(threading.Thread):
 
             # Đánh giá cảnh báo
             if active_group == "MULTIPLE_FACES":
-                # Người thứ hai: vi phạm nghiêm trọng -> chụp bằng chứng ngay lập tức (0.0s)
-                is_warning = True
+                # Người thứ hai: yêu cầu duy trì liên tục qua ngưỡng xác nhận (1.0s) để tránh nhiễu do cử động nhanh
+                is_warning = duration > rules.multiple_faces_threshold_seconds
             elif active_group == "NO_FACE":
                 is_warning = duration > rules.no_face_threshold_seconds
             elif active_group in ("DEVICE", "HEAD_POSE"):
@@ -148,7 +149,7 @@ class CameraWorker(threading.Thread):
 
             # Thông điệp trạng thái HUD
             if is_warning:
-                dur_text = " (TỨC THỜI)" if active_group == "MULTIPLE_FACES" else f" ({duration:.1f}s)"
+                dur_text = f" ({duration:.1f}s)"
                 status_text, status_color = f"CẢNH BÁO VI PHẠM: {current_violation}{dur_text}", (0, 0, 255)
             elif active_violation:
                 status_text, status_color = f"Đang chú ý: {current_violation} ({duration:.1f}s)", (0, 255, 255)

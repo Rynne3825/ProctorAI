@@ -183,7 +183,7 @@ Cùng nhóm với frame trước đó?
           │
           ▼
 Kiểm tra ngưỡng vi phạm:
-  ├─ Nhóm MULTIPLE_FACES: Ngưỡng = 0.0s (Cảnh báo & chụp ảnh TỨC THÌ)
+  ├─ Nhóm MULTIPLE_FACES: Ngưỡng = 1.0s (Duy trì liên tục 1s để lọc sạch nhiễu cử động nhanh)
   ├─ Nhóm NO_FACE:        Ngưỡng = 3.0s (Mất mặt quá 3 giây)
   └─ Nhóm Khác:           Ngưỡng = 2.0s (Duy trì hành vi quá 2 giây)
           │
@@ -217,9 +217,10 @@ Người quản trị có thể tinh chỉnh toàn bộ hoạt động của h�
 | `camera.fps_limit` | `30` | Khung hình/s | Tốc độ trần khung hình của camera. |
 | `rules.violation_threshold_seconds` | `2.0` | Giây | Thời gian duy trì hành vi bất thường trước khi xác nhận vi phạm. |
 | `rules.no_face_threshold_seconds` | `3.0` | Giây | Thời gian rời khỏi màn hình hoặc che camera trước khi ghi nhận vi phạm. |
+| `rules.multiple_faces_threshold_seconds` | `1.0` | Giây | Ngưỡng xác nhận có người thứ hai liên tục, loại bỏ nhiễu rung/nhòe khi di chuyển nhanh. |
 | `rules.snap_interval_extended_seconds` | `10.0` | Giây | Khoảng cách thời gian giữa các lần chụp bằng chứng tiếp theo nếu vẫn vi phạm. |
-| `head_pose.yaw_side_threshold` | `22.0` | Độ ($^\circ$) | Góc quay sang trái/phải tối thiểu để tính là nhìn bài người khác ($22^\circ - 45^\circ$). |
-| `head_pose.yaw_backward_threshold` | `45.0` | Độ ($^\circ$) | Góc quay đầu ngoái hẳn ra phía sau ($> 45^\circ$). |
+| `head_pose.yaw_side_threshold` | `22.0` | Độ ($^\circ$) | Góc quay sang trái/phải tối thiểu để tính là nhìn bài người khác ($22^\circ - 35^\circ$). |
+| `head_pose.yaw_backward_threshold` | `35.0` | Độ ($^\circ$) | Góc quay đầu ngoái hẳn ra phía sau ($> 35^\circ$), tự động nhớ trạng thái khi khuất góc mặt. |
 | `head_pose.pitch_threshold` | `20.0` | Độ ($^\circ$) | Góc cúi gằm mặt hoặc ngửa mặt lên trần nhà ($> 20^\circ$). |
 | `yolo.model_path` | `models/best.pt` | Đường dẫn | Đường dẫn file trọng số mô hình YOLO đã huấn luyện. |
 | `yolo.confidence_threshold` | `0.7` | Tỷ lệ (0-1) | Ngưỡng tin cậy tối thiểu để chấp nhận phát hiện vật thể. |

@@ -63,7 +63,7 @@ class ProctoringState:
                 "timestamp": file_name.replace("violation_", "").replace(".jpg", ""),
                 "type": violation_type,
                 "category": category,
-                "duration": "TỨC THỜI" if duration == 0.0 else f"{duration:.2f}s",
+                "duration": f"{duration:.1f}s",
                 "image_url": f"/screenshots/{file_name}"
             }
             self.snapshots_history.insert(0, snapshot_item)

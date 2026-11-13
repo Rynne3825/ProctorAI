@@ -51,6 +51,17 @@ class HeadPoseEstimator:
             min_tracking_confidence=0.5
         )
 
+        # Trạng thái nhớ chuyển tiếp (Hysteresis) khi quay hẳn ra sau khuất góc mặt
+        self.turned_backward: bool = False
+        self.last_pitch: float = 0.0
+        self.last_yaw: float = 0.0
+
+    def reset_state(self):
+        """Đặt lại trạng thái xoay đầu khi khởi động lại hoặc chuyển chế độ."""
+        self.turned_backward = False
+        self.last_pitch = 0.0
+        self.last_yaw = 0.0
+
     def process(self, frame_rgb: np.ndarray) -> Tuple[float, float, Optional[str]]:
         """
         Phân tích ảnh RGB và trả về:
@@ -59,12 +70,15 @@ class HeadPoseEstimator:
         results = self.face_mesh.process(frame_rgb)
 
         if not results.multi_face_landmarks:
+            if self.turned_backward:
+                return self.last_pitch, self.last_yaw, "Quay hẳn ra sau"
             return 0.0, 0.0, "Mất mặt / Che camera"
 
         num_faces = len(results.multi_face_landmarks)
 
         # CẢNH BÁO ĐẶC BIỆT: Phát hiện có người thứ 2 trở lên trong khung hình
         if num_faces > 1:
+            self.turned_backward = False
             return 0.0, 0.0, f"Phát hiện {num_faces} người (Có người thứ hai)"
 
         # Khi chỉ có đúng 1 thí sinh: Tính toán góc quay đầu solvePnP (SQPNP)
@@ -83,6 +97,8 @@ class HeadPoseEstimator:
             flags=cv2.SOLVEPNP_SQPNP
         )
         if not success:
+            if self.turned_backward:
+                return self.last_pitch, self.last_yaw, "Quay hẳn ra sau"
             return 0.0, 0.0, None
 
         rot_mat, _ = cv2.Rodrigues(rot_vec)
@@ -97,14 +113,23 @@ class HeadPoseEstimator:
 
         if abs(yaw) > rules.yaw_backward_threshold:
             violation = "Quay hẳn ra sau"
+            self.turned_backward = True
+            self.last_pitch = pitch
+            self.last_yaw = yaw
         elif yaw > rules.yaw_side_threshold:
             violation = "Quay sang trái"
+            self.turned_backward = False
         elif yaw < -rules.yaw_side_threshold:
             violation = "Quay sang phải"
+            self.turned_backward = False
         elif pitch > rules.pitch_threshold:
             violation = "Cúi xuống"
+            self.turned_backward = False
         elif pitch < -rules.pitch_threshold:
             violation = "Ngửa mặt lên"
+            self.turned_backward = False
+        else:
+            self.turned_backward = False
 
         return pitch, yaw, violation
 

@@ -25,12 +25,13 @@ class CameraConfig:
 class RulesConfig:
     violation_threshold_seconds: float = 2.0
     no_face_threshold_seconds: float = 3.0
+    multiple_faces_threshold_seconds: float = 1.0
     snap_interval_extended_seconds: float = 10.0
 
 
 @dataclass
 class HeadPoseConfig:
-    yaw_backward_threshold: float = 45.0
+    yaw_backward_threshold: float = 35.0
     yaw_side_threshold: float = 22.0
     pitch_threshold: float = 20.0
 

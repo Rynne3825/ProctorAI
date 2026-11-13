@@ -12,10 +12,11 @@ camera:
 rules:
   violation_threshold_seconds: 2.0
   no_face_threshold_seconds: 3.0
+  multiple_faces_threshold_seconds: 1.0
   snap_interval_extended_seconds: 10.0
 
 head_pose:
-  yaw_backward_threshold: 45.0  # Quay ngoái hẳn đầu ra sau (> 45 độ)
+  yaw_backward_threshold: 35.0  # Quay ngoái hẳn đầu ra sau (> 35 độ)
   yaw_side_threshold: 22.0      # Quay sang trái/phải rõ rệt (> 22 độ)
   pitch_threshold: 20.0         # Cúi gằm hoặc ngửa hẳn mặt (> 20 độ)
 

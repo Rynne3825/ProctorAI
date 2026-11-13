@@ -11,8 +11,8 @@ echo   Samsung Innovation Campus - Capstone Project
 echo ============================================================
 echo.
 
-if not exist ".venv\Scripts\activate.bat" (
-    echo [ERROR] Khong tim thay moi truong ao .venv!
+if not exist ".venv\Scripts\python.exe" (
+    echo [ERROR] Khong tim thay Python trong moi truong ao .venv!
     echo Vui long kiem tra lai thu muc cai dat.
     pause
     exit /b 1
@@ -25,6 +25,6 @@ echo [*] Dang khoi dong trinh duyet...
 start "" http://127.0.0.1:8000
 
 echo [*] Dang khoi chay may chu ProctorAI...
-python main.py
+".venv\Scripts\python.exe" main.py
 
 pause
